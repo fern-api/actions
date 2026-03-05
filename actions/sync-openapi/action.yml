@@ -1,0 +1,31 @@
+name: "Sync OpenAPI Files"
+description: "Sync OpenAPI specification files between repositories or update API from source using fern"
+author: "Fern"
+inputs:
+  repository:
+    description: "Target repository in owner/repo format (only used when update_from_source is false)"
+    required: false
+  token:
+    description: "GitHub token with repo scope for repository access"
+    required: true
+  branch:
+    description: "Branch name to create or update"
+    required: false
+    default: "fern/sync-openapi"
+  sources:
+    description: "JSON or YAML array of mappings (from source to destination) (only used when update_from_source is false)"
+    required: false
+  auto_merge:
+    description: "Whether to push directly to the branch or create a PR"
+    required: false
+    default: "false"
+  update_from_source:
+    description: "Whether to run \"fern api update\" on the current repository instead of syncing files"
+    required: false
+    default: "false"
+runs:
+  using: "node20"
+  main: "dist/index.js"
+branding:
+  icon: "refresh-cw"
+  color: "green"
