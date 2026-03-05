@@ -1,0 +1,24 @@
+name: "Example Action"
+description: "A template GitHub Action demonstrating the monorepo pattern"
+author: "Fern"
+
+inputs:
+  github-token:
+    description: "GitHub token for API access"
+    required: true
+    default: ${{ github.token }}
+  message:
+    description: "A message to echo"
+    required: true
+  dry-run:
+    description: "If true, skip side effects"
+    required: false
+    default: "false"
+
+outputs:
+  result:
+    description: "The processed result message"
+
+runs:
+  using: "node20"
+  main: "dist/index.js"

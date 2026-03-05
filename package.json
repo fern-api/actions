@@ -1,0 +1,32 @@
+{
+  "name": "fern-github-actions",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Monorepo for Fern GitHub Actions",
+  "scripts": {
+    "build": "pnpm -r --filter './actions/**' run build",
+    "build:all": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "postinstall": "lefthook install"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "lefthook": "^1.7.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
+}

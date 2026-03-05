@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.16.0/.schema/devbox.schema.json",
+  "packages": ["nodejs@20", "pnpm@10.30.1", "git@latest", "gh@latest"],
+  "shell": {
+    "init_hook": [
+      "printf '\\033]0;%s\\007' 'fern-github-actions (devbox)'",
+      "echo 'Node.js:' $(node --version)",
+      "echo 'pnpm:' $(pnpm --version)",
+      "echo 'GitHub CLI:' $(gh --version 2>/dev/null | head -1 || echo 'not available')",
+      "echo 'Fern GitHub Actions development environment loaded!'"
+    ],
+    "scripts": {
+      "install": "pnpm install",
+      "build": "pnpm build",
+      "test": "pnpm test",
+      "check": "pnpm check"
+    }
+  }
+}

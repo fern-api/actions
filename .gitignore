@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# pnpm
+.pnpm-store/
+.pnpm-debug.log
+
+# Build outputs
+# NOTE: actions/*/dist/ must be committed for real actions - GitHub runners execute dist/index.js directly
+# The example-action dist is excluded as it's only a template
+packages/*/dist/
+actions/example-action/dist/
+build/
+out/
+lib/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code
+.claude/
+
+# TypeScript
+*.tsbuildinfo
+
+# Coverage
+coverage/

@@ -1,0 +1,30 @@
+{
+  "name": "@fern-github-actions/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared utilities and types for Fern GitHub Actions",
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "dev": "tsup --watch"
+  },
+  "dependencies": {
+    "@actions/core": "^1.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}
