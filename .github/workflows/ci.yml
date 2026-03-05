@@ -21,7 +21,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -51,7 +51,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -71,6 +71,11 @@ jobs:
       - name: Verify bundles exist
         run: |
           for action_dir in actions/*/; do
+            # Skip composite actions (no package.json = no build output expected)
+            if [ ! -f "${action_dir}package.json" ]; then
+              echo "SKIP: ${action_dir} is a composite action (no package.json)"
+              continue
+            fi
             bundle="${action_dir}dist/index.js"
             if [ ! -f "$bundle" ]; then
               echo "ERROR: Missing bundle at $bundle"
@@ -81,7 +86,13 @@ jobs:
 
       - name: Check dist is committed
         run: |
-          if [ -n "$(git status --porcelain actions/*/dist/)" ]; then
+          # Only check actions that have a package.json (Node.js actions with build output)
+          stale=""
+          for action_dir in actions/*/; do
+            [ -f "${action_dir}package.json" ] || continue
+            stale+="$(git status --porcelain "${action_dir}dist/")"
+          done
+          if [ -n "$stale" ]; then
             echo "WARNING: dist/ files differ from committed versions."
             echo "Run 'pnpm build' and commit the results."
             git diff --stat actions/*/dist/

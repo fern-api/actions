@@ -1,0 +1,34 @@
+name: Setup Fern CLI
+description: Install and configure the Fern CLI in your GitHub Actions workflow
+branding:
+  icon: terminal
+  color: green
+
+inputs:
+  version:
+    description: Fern CLI version to install (e.g. "latest", "0.15.0")
+    default: latest
+
+runs:
+  using: composite
+  steps:
+    - name: Install Fern CLI
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        if ! command -v npm &>/dev/null; then
+          echo "Error: npm is not available. Please add a Node.js setup step before this action."
+          exit 1
+        fi
+        if ! command -v node &>/dev/null; then
+          echo "Error: node is not available. Please add a Node.js setup step before this action."
+          exit 1
+        fi
+
+        PKG="fern-api"
+        [ "$VERSION" != "latest" ] && PKG="fern-api@$VERSION"
+
+        npm install -g "$PKG"
+
+        echo "Installed Fern CLI version $(FERN_NO_VERSION_REDIRECTION=true fern --version)"

@@ -13,7 +13,7 @@ inputs:
     required: false
     default: "fern/sync-openapi"
   sources:
-    description: "JSON or YAML array of mappings (from source to destination) (only used when update_from_source is false)"
+    description: "JSON or YAML array of mappings (from source to destination). Required when update_from_source is false."
     required: false
   auto_merge:
     description: "Whether to push directly to the branch or create a PR"

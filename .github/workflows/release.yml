@@ -1,44 +1,226 @@
 name: Release
+#
+# Triggered when a release is published in this monorepo.
+# Tag format: <action-name>@<version>  e.g. sync-openapi@v4.1.0
+#
+# This workflow mirrors the action's files to its standalone repo, tags it,
+# and creates a matching GitHub Release there so consumers can continue using
+# the clean `uses: fern-api/sync-openapi@v4` syntax unchanged.
+#
+# Required secret: ACTIONS_MIRROR_TOKEN
+#   A GitHub PAT with `contents: write` on each mirror repo:
+#     - fern-api/sync-openapi
+#     - fern-api/setup-fern-cli
+#   Use a classic PAT with `repo` scope, or a fine-grained PAT scoped to
+#   those two repos with "Contents: Read and write" permission.
+#
+# Action-to-mirror mapping (add new actions here as they are created):
+#   sync-openapi   -> fern-api/sync-openapi
+#   setup-fern-cli -> fern-api/setup-fern-cli
+#
+# example-action is explicitly blocked from mirroring.
 
 on:
   release:
     types: [published]
 
 jobs:
-  tag-aliases:
+  # ---------------------------------------------------------------------------
+  # Parse the release tag and resolve outputs for the mirror job.
+  # ---------------------------------------------------------------------------
+  parse:
+    name: Parse release tag
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    outputs:
+      action-name: ${{ steps.tag.outputs.action-name }}
+      version:     ${{ steps.tag.outputs.version }}
+      mirror-repo: ${{ steps.tag.outputs.mirror-repo }}
+      skip:        ${{ steps.tag.outputs.skip }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Move major and minor version tags
-        if: ${{ !github.event.release.prerelease }}
+      - name: Parse tag and resolve mirror repo
+        id: tag
         env:
-          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
         run: |
-          VERSION="${{ github.event.release.tag_name }}"
+          # Expected format: <action-name>@<version>  e.g. sync-openapi@v4.1.0
+          if [[ "$TAG" != *"@"* ]]; then
+            echo "ERROR: Tag '$TAG' does not match expected format <action-name>@<version>"
+            exit 1
+          fi
 
-          # Only move tags if this is the latest release for the repo
-          LATEST=$(gh release view --repo "${{ github.repository }}" --json tagName -q .tagName)
-          if [ "$LATEST" != "$VERSION" ]; then
-            echo "Skipping: $VERSION is not the latest release (latest is $LATEST)"
+          ACTION_NAME="${TAG%%@*}"
+          VERSION="${TAG##*@}"
+
+          echo "action-name=$ACTION_NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION"         >> "$GITHUB_OUTPUT"
+
+          # Block example-action from ever being mirrored
+          if [[ "$ACTION_NAME" == "example-action" ]]; then
+            echo "Skipping mirror for example-action"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          STRIPPED="$(echo "$VERSION" | sed 's/^v//')"
-          PARTS="$(echo "$STRIPPED" | tr '.' '\n' | wc -l)"
-          MAJOR="v$(echo "$STRIPPED" | cut -d. -f1)"
+          # Resolve the mirror repo from the action name.
+          # Add new actions here as they are onboarded.
+          case "$ACTION_NAME" in
+            sync-openapi)
+              MIRROR_REPO="fern-api/sync-openapi"
+              ;;
+            setup-fern-cli)
+              MIRROR_REPO="fern-api/setup-fern-cli"
+              ;;
+            *)
+              echo "ERROR: Unknown action '$ACTION_NAME' — no mirror repo configured."
+              exit 1
+              ;;
+          esac
 
-          # Always move the major tag (e.g. v3)
-          echo "Updating major tag: $MAJOR"
-          git tag -f "$MAJOR"
-          git push origin "refs/tags/$MAJOR" --force
+          echo "mirror-repo=$MIRROR_REPO" >> "$GITHUB_OUTPUT"
+          echo "skip=false"               >> "$GITHUB_OUTPUT"
 
-          # Move the minor tag only if version has 3+ parts (e.g. v3.1.0 → v3.1)
-          if [ "$PARTS" -ge 3 ]; then
-            MINOR="v$(echo "$STRIPPED" | cut -d. -f1).$(echo "$STRIPPED" | cut -d. -f2)"
-            echo "Updating minor tag: $MINOR"
-            git tag -f "$MINOR"
-            git push origin "refs/tags/$MINOR" --force
+  # ---------------------------------------------------------------------------
+  # Build (if needed) and mirror the action to its standalone repo.
+  # ---------------------------------------------------------------------------
+  mirror:
+    name: Mirror ${{ needs.parse.outputs.action-name }} → ${{ needs.parse.outputs.mirror-repo }}
+    runs-on: ubuntu-latest
+    needs: parse
+    if: needs.parse.outputs.skip != 'true'
+    permissions:
+      contents: read
+    env:
+      ACTION_NAME: ${{ needs.parse.outputs.action-name }}
+      VERSION:     ${{ needs.parse.outputs.version }}
+      MIRROR_REPO: ${{ needs.parse.outputs.mirror-repo }}
+    steps:
+      - name: Checkout monorepo at release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Detect action type
+        id: type
+        run: |
+          if [ -f "actions/$ACTION_NAME/package.json" ]; then
+            echo "is-node=true" >> "$GITHUB_OUTPUT"
+            echo "Action type: Node.js (has package.json)"
+          else
+            echo "is-node=false" >> "$GITHUB_OUTPUT"
+            echo "Action type: composite (no package.json)"
           fi
+
+      # Node.js actions only: install, build
+      - name: Setup pnpm
+        if: steps.type.outputs.is-node == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        if: steps.type.outputs.is-node == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        if: steps.type.outputs.is-node == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        if: steps.type.outputs.is-node == 'true'
+        run: pnpm --filter "@fern-github-actions/shared" build
+
+      - name: Build action
+        if: steps.type.outputs.is-node == 'true'
+        run: pnpm --filter "@fern-github-actions/${{ env.ACTION_NAME }}" build
+
+      - name: Verify dist/index.js was produced
+        if: steps.type.outputs.is-node == 'true'
+        run: |
+          BUNDLE="actions/$ACTION_NAME/dist/index.js"
+          if [ ! -f "$BUNDLE" ]; then
+            echo "ERROR: expected $BUNDLE but it was not found"
+            exit 1
+          fi
+          echo "Bundle size: $(du -sh "$BUNDLE" | cut -f1)"
+
+      - name: Clone mirror repo
+        env:
+          PAT: ${{ secrets.ACTIONS_MIRROR_TOKEN }}
+        run: |
+          git clone \
+            "https://x-access-token:${PAT}@github.com/${MIRROR_REPO}.git" \
+            /tmp/mirror
+
+      - name: Wipe mirror working tree (keep .git)
+        run: |
+          cd /tmp/mirror
+          git rm -rf . --quiet
+
+      - name: Copy action files into mirror
+        run: |
+          SRC="actions/$ACTION_NAME"
+          cp "$SRC/action.yml" /tmp/mirror/action.yml
+          cp "$SRC/README.md"  /tmp/mirror/README.md
+          if [ "${{ steps.type.outputs.is-node }}" = "true" ]; then
+            mkdir -p /tmp/mirror/dist
+            cp -r "$SRC/dist/." /tmp/mirror/dist/
+          fi
+
+      - name: Commit and push to mirror main
+        env:
+          PAT: ${{ secrets.ACTIONS_MIRROR_TOKEN }}
+        run: |
+          cd /tmp/mirror
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name  "github-actions[bot]"
+          git add -A
+          git commit -m "release: ${ACTION_NAME} ${VERSION}
+
+          Released from fern-api/fern-github-actions tag ${ACTION_NAME}@${VERSION}"
+          git push origin main
+
+      - name: Push version and alias tags to mirror
+        run: |
+          cd /tmp/mirror
+
+          STRIPPED="${VERSION#v}"
+          # Strip pre-release suffix (e.g. 4.1.0-beta.1 -> 4.1.0) for part counting
+          CORE="${STRIPPED%%-*}"
+          MAJOR="v$(echo "$CORE" | cut -d. -f1)"
+          PARTS=$(echo "$CORE" | tr '.' '\n' | wc -l)
+
+          # Exact version tag — not force-pushed; fails loudly on duplicate release
+          git tag "$VERSION"
+          git push origin "refs/tags/$VERSION"
+
+          # Alias tags are only moved for stable releases, not pre-releases
+          if [ "${{ github.event.release.prerelease }}" != "true" ]; then
+            # Major alias (e.g. v4) — always move forward
+            git tag -f "$MAJOR"
+            git push origin "refs/tags/$MAJOR" --force
+
+            # Minor alias (e.g. v4.1) — only for semver with 3+ parts
+            if [ "$PARTS" -ge 3 ]; then
+              MINOR="v$(echo "$CORE" | cut -d. -f1).$(echo "$CORE" | cut -d. -f2)"
+              git tag -f "$MINOR"
+              git push origin "refs/tags/$MINOR" --force
+            fi
+          fi
+
+      - name: Create GitHub Release on mirror
+        env:
+          GH_TOKEN:     ${{ secrets.ACTIONS_MIRROR_TOKEN }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+          PRERELEASE:   ${{ github.event.release.prerelease }}
+        run: |
+          PRERELEASE_FLAG=""
+          [ "$PRERELEASE" = "true" ] && PRERELEASE_FLAG="--prerelease"
+
+          gh release create "$VERSION" \
+            --repo "$MIRROR_REPO" \
+            --title "$ACTION_NAME $VERSION" \
+            --notes "$RELEASE_BODY" \
+            $PRERELEASE_FLAG
