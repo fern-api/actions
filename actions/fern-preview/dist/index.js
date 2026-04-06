@@ -26798,9 +26798,23 @@ async function runPreview({
   });
   let parsed;
   try {
-    const lastBrace = stdout.lastIndexOf("{");
-    if (lastBrace !== -1) {
-      parsed = JSON.parse(stdout.slice(lastBrace));
+    const lines = stdout.split("\n");
+    let endIdx = -1;
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].trimEnd() === "}") {
+        endIdx = i;
+        break;
+      }
+    }
+    if (endIdx !== -1) {
+      let startIdx = endIdx;
+      for (let i = endIdx; i >= 0; i--) {
+        if (lines[i].trimStart().startsWith("{")) {
+          startIdx = i;
+          break;
+        }
+      }
+      parsed = JSON.parse(lines.slice(startIdx, endIdx + 1).join("\n"));
     }
   } catch {
     core6.warning(`Failed to parse preview output for group '${groupName}'`);

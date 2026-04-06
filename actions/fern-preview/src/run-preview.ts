@@ -64,13 +64,30 @@ export async function runPreview({
   });
 
   // Parse JSON output — fern sdk preview --json writes a JSON object to stdout.
-  // The output may contain non-JSON log lines, so we find the last top-level
-  // JSON object to avoid greedily matching across unrelated braces.
+  // The output may contain non-JSON log lines before/after the JSON block, so
+  // we scan lines in reverse to find the closing brace, then match it back to
+  // the opening brace. This is more robust than lastIndexOf("{") which could
+  // match a stray brace in a log line after the JSON.
   let parsed: FernPreviewJson | undefined;
   try {
-    const lastBrace = stdout.lastIndexOf("{");
-    if (lastBrace !== -1) {
-      parsed = JSON.parse(stdout.slice(lastBrace)) as FernPreviewJson;
+    const lines = stdout.split("\n");
+    let endIdx = -1;
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].trimEnd() === "}") {
+        endIdx = i;
+        break;
+      }
+    }
+    if (endIdx !== -1) {
+      // Walk backwards to find the matching opening brace line
+      let startIdx = endIdx;
+      for (let i = endIdx; i >= 0; i--) {
+        if (lines[i].trimStart().startsWith("{")) {
+          startIdx = i;
+          break;
+        }
+      }
+      parsed = JSON.parse(lines.slice(startIdx, endIdx + 1).join("\n")) as FernPreviewJson;
     }
   } catch {
     core.warning(`Failed to parse preview output for group '${groupName}'`);
