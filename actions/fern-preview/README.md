@@ -49,7 +49,6 @@ The action posts (or updates) a single comment on the PR:
 - A `fern/` directory with `generators.yml` containing TypeScript SDK generators
 - A valid `FERN_TOKEN` secret
 - Docker available on the runner (default GitHub-hosted runners include Docker)
-- Fern CLI **4.63.0+** (the `--output` flag used by this action was added in 4.63.0)
 
 ## Supported Generators
 
