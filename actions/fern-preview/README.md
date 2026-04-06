@@ -49,6 +49,7 @@ The action posts (or updates) a single comment on the PR:
 - A `fern/` directory with `generators.yml` containing TypeScript SDK generators
 - A valid `FERN_TOKEN` secret
 - Docker available on the runner (default GitHub-hosted runners include Docker)
+- Fern CLI **4.63.0+** (the `--output` flag used by this action was added in 4.63.0)
 
 ## Supported Generators
 
@@ -57,3 +58,8 @@ The action posts (or updates) a single comment on the PR:
 - `fern-typescript-browser-sdk`
 
 (With or without the `fernapi/` prefix)
+
+## Notes
+
+- **Branch cleanup**: The action creates `fern-preview-pr-<N>` branches in SDK repos for diff comparisons. These branches accumulate after PRs merge or close. Consider adding a `pull_request: closed` workflow step or a periodic cleanup job to delete stale `fern-preview-pr-*` branches.
+- **Same-owner restriction**: For security, diff branches are only pushed to SDK repos owned by the same GitHub organization as the source repository. Cross-org SDK repos will be skipped with a warning.

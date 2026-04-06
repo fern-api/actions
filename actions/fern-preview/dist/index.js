@@ -26734,7 +26734,7 @@ async function pushDiffBranch({
     await gitExec(["clone", cloneUrl, cloneDir, "--depth", "1"], { silent: true });
     let defaultBranch = "main";
     let lsRemoteOutput = "";
-    const lsRemoteExitCode = await exec3.exec("git", ["ls-remote", "--symref", "origin", "HEAD"], {
+    const lsRemoteExitCode = await gitExec(["ls-remote", "--symref", "origin", "HEAD"], {
       cwd: cloneDir,
       listeners: {
         stdout: (data) => {
@@ -26769,7 +26769,7 @@ async function pushDiffBranch({
     await gitExec(["-C", cloneDir, "config", "user.name", "fern-preview[bot]"]);
     await gitExec(["-C", cloneDir, "config", "user.email", "noreply@buildwithfern.com"]);
     await gitExec(["-C", cloneDir, "add", "-A"]);
-    const diffExitCode = await exec3.exec("git", ["-C", cloneDir, "diff", "--cached", "--quiet"], {
+    const diffExitCode = await gitExec(["-C", cloneDir, "diff", "--cached", "--quiet"], {
       ignoreReturnCode: true
     });
     if (diffExitCode === 0) {

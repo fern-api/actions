@@ -67,11 +67,12 @@ export async function runPreview({
     ignoreReturnCode: true,
   });
 
-  // Parse JSON output — fern sdk preview --json writes a JSON object to stdout.
-  // The output may contain non-JSON log lines before/after the JSON block, so
-  // we scan lines in reverse to find the closing brace, then match it back to
-  // the opening brace. This is more robust than lastIndexOf("{") which could
-  // match a stray brace in a log line after the JSON.
+  // Parse JSON output — fern sdk preview --json writes a pretty-printed JSON
+  // object to stdout. Log lines may appear before/after it, so we can't just
+  // JSON.parse(stdout). We scan lines in reverse for the closing "}" then walk
+  // back to the opening "{". This assumes the JSON is pretty-printed (closing
+  // brace on its own line) — if the CLI ever emits single-line JSON, this
+  // heuristic will need updating.
   let parsed: FernPreviewJson | undefined;
   try {
     const lines = stdout.split("\n");
@@ -106,6 +107,9 @@ export async function runPreview({
     };
   }
 
+  // The action invokes fern sdk preview once per group with a single generator,
+  // so we expect exactly one preview entry. If the CLI ever returns multiple
+  // entries per invocation, this will need to return an array.
   const preview = parsed.previews?.[0];
   if (!preview) {
     return {

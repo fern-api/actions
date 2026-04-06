@@ -45,7 +45,7 @@ export async function pushDiffBranch({
     // refs/remotes/origin/HEAD, so git symbolic-ref won't work)
     let defaultBranch = "main";
     let lsRemoteOutput = "";
-    const lsRemoteExitCode = await exec.exec("git", ["ls-remote", "--symref", "origin", "HEAD"], {
+    const lsRemoteExitCode = await gitExec(["ls-remote", "--symref", "origin", "HEAD"], {
       cwd: cloneDir,
       listeners: {
         stdout: (data: Buffer) => {
@@ -93,7 +93,7 @@ export async function pushDiffBranch({
     await gitExec(["-C", cloneDir, "add", "-A"]);
 
     // Check for changes
-    const diffExitCode = await exec.exec("git", ["-C", cloneDir, "diff", "--cached", "--quiet"], {
+    const diffExitCode = await gitExec(["-C", cloneDir, "diff", "--cached", "--quiet"], {
       ignoreReturnCode: true,
     });
 
@@ -120,10 +120,7 @@ export async function pushDiffBranch({
  * prevent token leakage. If a git command fails, the Error may contain the
  * full command string including embedded credentials in the clone URL.
  */
-async function gitExec(
-  args: string[],
-  options?: { silent?: boolean; cwd?: string }
-): Promise<number> {
+async function gitExec(args: string[], options?: exec.ExecOptions): Promise<number> {
   try {
     return await exec.exec("git", args, options);
   } catch (error) {
