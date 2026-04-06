@@ -24,8 +24,15 @@ export async function detectTypeScriptGroups(): Promise<DetectedGroup[]> {
   core.info(`Found ${generatorsFiles.length} generators.yml file(s)`);
 
   for (const filePath of generatorsFiles) {
-    const content = fs.readFileSync(filePath, "utf8");
-    const config = yaml.load(content) as Record<string, unknown> | null;
+    let config: Record<string, unknown> | null;
+    try {
+      const content = fs.readFileSync(filePath, "utf8");
+      config = yaml.load(content) as Record<string, unknown> | null;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      core.warning(`Failed to parse ${filePath}: ${message}`);
+      continue;
+    }
     if (config == null) {
       continue;
     }

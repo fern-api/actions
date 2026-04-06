@@ -26542,8 +26542,15 @@ async function detectTypeScriptGroups() {
   const generatorsFiles = findGeneratorsYml(fernDir);
   core2.info(`Found ${generatorsFiles.length} generators.yml file(s)`);
   for (const filePath of generatorsFiles) {
-    const content = fs.readFileSync(filePath, "utf8");
-    const config = load(content);
+    let config;
+    try {
+      const content = fs.readFileSync(filePath, "utf8");
+      config = load(content);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      core2.warning(`Failed to parse ${filePath}: ${message}`);
+      continue;
+    }
     if (config == null) {
       continue;
     }
@@ -26658,17 +26665,20 @@ async function findExistingComment(octokit, owner, repo, prNumber) {
   }
   return void 0;
 }
+function escapeTableCell(text) {
+  return text.replace(/\|/g, "\\|");
+}
 function formatComment(results) {
   let rows = "";
   for (const result of results) {
     if (result.status === "error") {
-      rows += `| ${result.groupName} | :x: Failed | \u2014 | \u2014 |
+      rows += `| ${escapeTableCell(result.groupName)} | :x: Failed | \u2014 | \u2014 |
 `;
       continue;
     }
-    const installCell = result.installCommand ? `\`${result.installCommand}\`` : "\u2014";
+    const installCell = result.installCommand ? `\`${escapeTableCell(result.installCommand)}\`` : "\u2014";
     const diffCell = result.diffUrl ? `[View diff](${result.diffUrl})` : "No changes";
-    rows += `| ${result.groupName} | ${result.packageName ?? "\u2014"} | ${installCell} | ${diffCell} |
+    rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(result.packageName ?? "\u2014")} | ${installCell} | ${diffCell} |
 `;
   }
   const errors = results.filter((r) => r.status === "error" && r.error);
@@ -26697,12 +26707,17 @@ var os = __toESM(require("os"));
 var path2 = __toESM(require("path"));
 var core5 = __toESM(require_core());
 var exec3 = __toESM(require_exec());
+var REPO_PATTERN = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
 async function pushDiffBranch({
   sdkRepo,
   outputPath,
   prNumber,
   githubToken
 }) {
+  if (!REPO_PATTERN.test(sdkRepo)) {
+    core5.warning(`Invalid SDK repo format: '${sdkRepo}' \u2014 expected 'owner/repo'`);
+    return void 0;
+  }
   if (!fs2.existsSync(outputPath)) {
     core5.warning(`Output path does not exist: ${outputPath}`);
     return void 0;
@@ -26716,27 +26731,26 @@ async function pushDiffBranch({
   const cloneDir = fs2.mkdtempSync(path2.join(os.tmpdir(), "sdk-diff-"));
   const cloneUrl = `https://x-access-token:${githubToken}@github.com/${sdkRepo}.git`;
   try {
-    await exec3.exec("git", ["clone", cloneUrl, cloneDir, "--depth", "1"], {
-      silent: true
-    });
+    await gitExec(["clone", cloneUrl, cloneDir, "--depth", "1"], { silent: true });
     let defaultBranch = "main";
-    let refOutput = "";
-    const refExitCode = await exec3.exec(
-      "git",
-      ["-C", cloneDir, "symbolic-ref", "refs/remotes/origin/HEAD"],
-      {
-        listeners: {
-          stdout: (data) => {
-            refOutput += data.toString();
-          }
-        },
-        ignoreReturnCode: true
+    let lsRemoteOutput = "";
+    const lsRemoteExitCode = await exec3.exec("git", ["ls-remote", "--symref", "origin", "HEAD"], {
+      cwd: cloneDir,
+      listeners: {
+        stdout: (data) => {
+          lsRemoteOutput += data.toString();
+        }
+      },
+      silent: true,
+      ignoreReturnCode: true
+    });
+    if (lsRemoteExitCode === 0) {
+      const match = lsRemoteOutput.match(/ref: refs\/heads\/(.+)\t/);
+      if (match?.[1]) {
+        defaultBranch = match[1];
       }
-    );
-    if (refExitCode === 0 && refOutput.trim()) {
-      defaultBranch = refOutput.trim().replace("refs/remotes/origin/", "");
     }
-    await exec3.exec("git", ["-C", cloneDir, "checkout", "-b", branchName]);
+    await gitExec(["-C", cloneDir, "checkout", "-b", branchName]);
     const protectedNames = /* @__PURE__ */ new Set([".git", ".github", ".gitignore", ".fernignore"]);
     const existingEntries = fs2.readdirSync(cloneDir);
     for (const entry of existingEntries) {
@@ -26744,10 +26758,17 @@ async function pushDiffBranch({
         fs2.rmSync(path2.join(cloneDir, entry), { recursive: true, force: true });
       }
     }
-    fs2.cpSync(outputPath, cloneDir, { recursive: true });
-    await exec3.exec("git", ["-C", cloneDir, "config", "user.name", "fern-preview[bot]"]);
-    await exec3.exec("git", ["-C", cloneDir, "config", "user.email", "noreply@buildwithfern.com"]);
-    await exec3.exec("git", ["-C", cloneDir, "add", "-A"]);
+    const outputEntries = fs2.readdirSync(outputPath);
+    for (const entry of outputEntries) {
+      if (!protectedNames.has(entry)) {
+        const src = path2.join(outputPath, entry);
+        const dest = path2.join(cloneDir, entry);
+        fs2.cpSync(src, dest, { recursive: true });
+      }
+    }
+    await gitExec(["-C", cloneDir, "config", "user.name", "fern-preview[bot]"]);
+    await gitExec(["-C", cloneDir, "config", "user.email", "noreply@buildwithfern.com"]);
+    await gitExec(["-C", cloneDir, "add", "-A"]);
     const diffExitCode = await exec3.exec("git", ["-C", cloneDir, "diff", "--cached", "--quiet"], {
       ignoreReturnCode: true
     });
@@ -26755,15 +26776,22 @@ async function pushDiffBranch({
       core5.info(`No SDK changes detected for ${sdkRepo}`);
       return void 0;
     }
-    await exec3.exec("git", ["-C", cloneDir, "commit", "-m", `SDK Preview for PR #${prNumber}`]);
-    await exec3.exec("git", ["-C", cloneDir, "push", "-f", "origin", branchName], {
-      silent: true
-    });
+    await gitExec(["-C", cloneDir, "commit", "-m", `SDK Preview for PR #${prNumber}`]);
+    await gitExec(["-C", cloneDir, "push", "-f", "origin", branchName], { silent: true });
     const diffUrl = `https://github.com/${sdkRepo}/compare/${defaultBranch}...${branchName}`;
     core5.info(`SDK diff pushed: ${diffUrl}`);
     return diffUrl;
   } finally {
     fs2.rmSync(cloneDir, { recursive: true, force: true });
+  }
+}
+async function gitExec(args, options) {
+  try {
+    return await exec3.exec("git", args, options);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const sanitized = message.replace(/x-access-token:[^@]+@/g, "x-access-token:***@");
+    throw new Error(sanitized);
   }
 }
 
@@ -26777,7 +26805,11 @@ async function runPreview({
   apiName,
   fernToken
 }) {
-  const outputDir = path3.join(os2.tmpdir(), "fern-preview", groupName);
+  const outputDir = path3.join(
+    os2.tmpdir(),
+    "fern-preview",
+    apiName ? `${apiName}-${groupName}` : groupName
+  );
   const args = ["sdk", "preview", "--json", "--group", groupName, "--output", outputDir];
   if (apiName) {
     args.push("--api", apiName);
@@ -26865,6 +26897,7 @@ async function run() {
       `Found ${groups.length} TypeScript group(s): ${groups.map((g) => g.groupName).join(", ")}`
     );
     const prNumber = github2.context.payload.pull_request?.number;
+    const sourceOwner = github2.context.repo.owner;
     const results = [];
     for (const group of groups) {
       core7.startGroup(
@@ -26892,6 +26925,13 @@ async function run() {
     if (prNumber != null) {
       for (const result of results) {
         if (result.status === "success" && result.sdkRepo && result.outputPath) {
+          const repoOwner = result.sdkRepo.split("/")[0];
+          if (repoOwner !== sourceOwner) {
+            core7.warning(
+              `Skipping diff push for '${result.groupName}': SDK repo '${result.sdkRepo}' is not owned by '${sourceOwner}'`
+            );
+            continue;
+          }
           core7.startGroup(`SDK diff: ${result.groupName} \u2192 ${result.sdkRepo}`);
           try {
             const diffUrl = await pushDiffBranch({
@@ -26909,8 +26949,13 @@ async function run() {
         }
       }
     }
-    if (prNumber) {
-      await postOrUpdateComment({ results, githubToken, prNumber });
+    if (prNumber != null) {
+      try {
+        await postOrUpdateComment({ results, githubToken, prNumber });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        core7.warning(`Failed to post PR comment: ${message}`);
+      }
     } else {
       core7.info("Not a pull request event \u2014 skipping PR comment and SDK diff.");
       for (const result of results) {

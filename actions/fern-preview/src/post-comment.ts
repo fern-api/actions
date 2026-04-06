@@ -60,20 +60,26 @@ async function findExistingComment(
   return undefined;
 }
 
+function escapeTableCell(text: string): string {
+  return text.replace(/\|/g, "\\|");
+}
+
 export function formatComment(results: PreviewResult[]): string {
   let rows = "";
 
   for (const result of results) {
     if (result.status === "error") {
-      rows += `| ${result.groupName} | :x: Failed | — | — |\n`;
+      rows += `| ${escapeTableCell(result.groupName)} | :x: Failed | — | — |\n`;
       continue;
     }
 
-    const installCell = result.installCommand ? `\`${result.installCommand}\`` : "—";
+    const installCell = result.installCommand
+      ? `\`${escapeTableCell(result.installCommand)}\``
+      : "—";
 
     const diffCell = result.diffUrl ? `[View diff](${result.diffUrl})` : "No changes";
 
-    rows += `| ${result.groupName} | ${result.packageName ?? "—"} | ${installCell} | ${diffCell} |\n`;
+    rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(result.packageName ?? "—")} | ${installCell} | ${diffCell} |\n`;
   }
 
   // Append error details at the bottom

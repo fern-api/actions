@@ -4,6 +4,8 @@ import * as path from "node:path";
 import * as core from "@actions/core";
 import * as exec from "@actions/exec";
 
+const REPO_PATTERN = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
+
 export async function pushDiffBranch({
   sdkRepo,
   outputPath,
@@ -15,6 +17,11 @@ export async function pushDiffBranch({
   prNumber: number;
   githubToken: string;
 }): Promise<string | undefined> {
+  if (!REPO_PATTERN.test(sdkRepo)) {
+    core.warning(`Invalid SDK repo format: '${sdkRepo}' — expected 'owner/repo'`);
+    return undefined;
+  }
+
   if (!fs.existsSync(outputPath)) {
     core.warning(`Output path does not exist: ${outputPath}`);
     return undefined;
@@ -32,31 +39,32 @@ export async function pushDiffBranch({
 
   try {
     // Clone target SDK repo (shallow) — silent to avoid logging the token
-    await exec.exec("git", ["clone", cloneUrl, cloneDir, "--depth", "1"], {
-      silent: true,
-    });
+    await gitExec(["clone", cloneUrl, cloneDir, "--depth", "1"], { silent: true });
 
-    // Determine default branch
+    // Determine default branch via ls-remote (shallow clones don't have
+    // refs/remotes/origin/HEAD, so git symbolic-ref won't work)
     let defaultBranch = "main";
-    let refOutput = "";
-    const refExitCode = await exec.exec(
-      "git",
-      ["-C", cloneDir, "symbolic-ref", "refs/remotes/origin/HEAD"],
-      {
-        listeners: {
-          stdout: (data: Buffer) => {
-            refOutput += data.toString();
-          },
+    let lsRemoteOutput = "";
+    const lsRemoteExitCode = await exec.exec("git", ["ls-remote", "--symref", "origin", "HEAD"], {
+      cwd: cloneDir,
+      listeners: {
+        stdout: (data: Buffer) => {
+          lsRemoteOutput += data.toString();
         },
-        ignoreReturnCode: true,
+      },
+      silent: true,
+      ignoreReturnCode: true,
+    });
+    if (lsRemoteExitCode === 0) {
+      // Output format: "ref: refs/heads/main\tHEAD\n..."
+      const match = lsRemoteOutput.match(/ref: refs\/heads\/(.+)\t/);
+      if (match?.[1]) {
+        defaultBranch = match[1];
       }
-    );
-    if (refExitCode === 0 && refOutput.trim()) {
-      defaultBranch = refOutput.trim().replace("refs/remotes/origin/", "");
     }
 
     // Create preview branch
-    await exec.exec("git", ["-C", cloneDir, "checkout", "-b", branchName]);
+    await gitExec(["-C", cloneDir, "checkout", "-b", branchName]);
 
     // Remove existing files except protected ones
     const protectedNames = new Set([".git", ".github", ".gitignore", ".fernignore"]);
@@ -67,15 +75,22 @@ export async function pushDiffBranch({
       }
     }
 
-    // Copy generated files into the clone
-    fs.cpSync(outputPath, cloneDir, { recursive: true });
+    // Copy generated files into the clone, skipping protected paths
+    const outputEntries = fs.readdirSync(outputPath);
+    for (const entry of outputEntries) {
+      if (!protectedNames.has(entry)) {
+        const src = path.join(outputPath, entry);
+        const dest = path.join(cloneDir, entry);
+        fs.cpSync(src, dest, { recursive: true });
+      }
+    }
 
     // Configure git for commit
-    await exec.exec("git", ["-C", cloneDir, "config", "user.name", "fern-preview[bot]"]);
-    await exec.exec("git", ["-C", cloneDir, "config", "user.email", "noreply@buildwithfern.com"]);
+    await gitExec(["-C", cloneDir, "config", "user.name", "fern-preview[bot]"]);
+    await gitExec(["-C", cloneDir, "config", "user.email", "noreply@buildwithfern.com"]);
 
     // Stage all changes
-    await exec.exec("git", ["-C", cloneDir, "add", "-A"]);
+    await gitExec(["-C", cloneDir, "add", "-A"]);
 
     // Check for changes
     const diffExitCode = await exec.exec("git", ["-C", cloneDir, "diff", "--cached", "--quiet"], {
@@ -88,10 +103,8 @@ export async function pushDiffBranch({
     }
 
     // Commit and push — silent to avoid logging the token in the remote URL
-    await exec.exec("git", ["-C", cloneDir, "commit", "-m", `SDK Preview for PR #${prNumber}`]);
-    await exec.exec("git", ["-C", cloneDir, "push", "-f", "origin", branchName], {
-      silent: true,
-    });
+    await gitExec(["-C", cloneDir, "commit", "-m", `SDK Preview for PR #${prNumber}`]);
+    await gitExec(["-C", cloneDir, "push", "-f", "origin", branchName], { silent: true });
 
     const diffUrl = `https://github.com/${sdkRepo}/compare/${defaultBranch}...${branchName}`;
     core.info(`SDK diff pushed: ${diffUrl}`);
@@ -99,5 +112,24 @@ export async function pushDiffBranch({
   } finally {
     // Cleanup
     fs.rmSync(cloneDir, { recursive: true, force: true });
+  }
+}
+
+/**
+ * Wrapper around exec.exec("git", ...) that sanitizes error messages to
+ * prevent token leakage. If a git command fails, the Error may contain the
+ * full command string including embedded credentials in the clone URL.
+ */
+async function gitExec(
+  args: string[],
+  options?: { silent?: boolean; cwd?: string }
+): Promise<number> {
+  try {
+    return await exec.exec("git", args, options);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    // Strip anything that looks like a token from the error message
+    const sanitized = message.replace(/x-access-token:[^@]+@/g, "x-access-token:***@");
+    throw new Error(sanitized);
   }
 }

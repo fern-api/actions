@@ -41,7 +41,11 @@ export async function runPreview({
   apiName: string | undefined;
   fernToken: string;
 }): Promise<PreviewResult> {
-  const outputDir = path.join(os.tmpdir(), "fern-preview", groupName);
+  const outputDir = path.join(
+    os.tmpdir(),
+    "fern-preview",
+    apiName ? `${apiName}-${groupName}` : groupName
+  );
 
   const args = ["sdk", "preview", "--json", "--group", groupName, "--output", outputDir];
   if (apiName) {

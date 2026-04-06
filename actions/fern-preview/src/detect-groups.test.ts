@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -19,7 +20,7 @@ function writeGeneratorsYml(relativePath: string, content: string): void {
 }
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(process.cwd(), ".test-detect-groups-"));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "test-detect-groups-"));
   vi.spyOn(process, "cwd").mockReturnValue(tmpDir);
 });
 
@@ -104,6 +105,13 @@ groups:
 
     const groups = await detectTypeScriptGroups();
     expect(groups).toEqual([{ groupName: "internal", apiName: undefined, sdkRepo: undefined }]);
+  });
+
+  it("handles malformed YAML gracefully", async () => {
+    writeGeneratorsYml("generators.yml", "{ invalid yaml: [unterminated");
+
+    const groups = await detectTypeScriptGroups();
+    expect(groups).toEqual([]);
   });
 
   it("matches all supported TypeScript generator names", async () => {

@@ -27,6 +27,7 @@ async function run(): Promise<void> {
 
     // Resolve PR number early — used for branch naming and comment posting
     const prNumber = github.context.payload.pull_request?.number;
+    const sourceOwner = github.context.repo.owner;
 
     // 3. Run preview for each group (publish to registry + write to disk)
     const results: PreviewResult[] = [];
@@ -61,6 +62,18 @@ async function run(): Promise<void> {
     if (prNumber != null) {
       for (const result of results) {
         if (result.status === "success" && result.sdkRepo && result.outputPath) {
+          // Guard against pushing to repos outside the source owner.
+          // generators.yml is PR-author controlled, so sdkRepo could point
+          // anywhere. Restrict to same-owner repos by default.
+          const repoOwner = result.sdkRepo.split("/")[0];
+          if (repoOwner !== sourceOwner) {
+            core.warning(
+              `Skipping diff push for '${result.groupName}': ` +
+                `SDK repo '${result.sdkRepo}' is not owned by '${sourceOwner}'`
+            );
+            continue;
+          }
+
           core.startGroup(`SDK diff: ${result.groupName} → ${result.sdkRepo}`);
           try {
             const diffUrl = await pushDiffBranch({
@@ -80,8 +93,13 @@ async function run(): Promise<void> {
     }
 
     // 5. Post or update PR comment
-    if (prNumber) {
-      await postOrUpdateComment({ results, githubToken, prNumber });
+    if (prNumber != null) {
+      try {
+        await postOrUpdateComment({ results, githubToken, prNumber });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        core.warning(`Failed to post PR comment: ${message}`);
+      }
     } else {
       core.info("Not a pull request event — skipping PR comment and SDK diff.");
       for (const result of results) {
