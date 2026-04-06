@@ -26583,20 +26583,24 @@ async function detectTypeScriptGroups() {
   }
   return results;
 }
+var MAX_WALK_DEPTH = 5;
 function findGeneratorsYml(dir) {
   const results = [];
-  function walk(currentDir) {
+  function walk(currentDir, depth) {
+    if (depth > MAX_WALK_DEPTH) {
+      return;
+    }
     const entries = fs.readdirSync(currentDir, { withFileTypes: true });
     for (const entry of entries) {
       const fullPath = path.join(currentDir, entry.name);
       if (entry.isDirectory() && entry.name !== "node_modules") {
-        walk(fullPath);
+        walk(fullPath, depth + 1);
       } else if (entry.isFile() && entry.name === "generators.yml") {
         results.push(fullPath);
       }
     }
   }
-  walk(dir);
+  walk(dir, 0);
   return results;
 }
 
@@ -26751,21 +26755,10 @@ async function pushDiffBranch({
       }
     }
     await gitExec(["-C", cloneDir, "checkout", "-b", branchName]);
-    const protectedNames = /* @__PURE__ */ new Set([".git", ".github", ".gitignore", ".fernignore"]);
-    const existingEntries = fs2.readdirSync(cloneDir);
-    for (const entry of existingEntries) {
-      if (!protectedNames.has(entry)) {
-        fs2.rmSync(path2.join(cloneDir, entry), { recursive: true, force: true });
-      }
-    }
-    const outputEntries = fs2.readdirSync(outputPath);
-    for (const entry of outputEntries) {
-      if (!protectedNames.has(entry)) {
-        const src = path2.join(outputPath, entry);
-        const dest = path2.join(cloneDir, entry);
-        fs2.cpSync(src, dest, { recursive: true });
-      }
-    }
+    fs2.cpSync(outputPath, cloneDir, {
+      recursive: true,
+      filter: (src) => !src.includes(`${path2.sep}.git${path2.sep}`) && !src.endsWith(`${path2.sep}.git`)
+    });
     await gitExec(["-C", cloneDir, "config", "user.name", "fern-preview[bot]"]);
     await gitExec(["-C", cloneDir, "config", "user.email", "noreply@buildwithfern.com"]);
     await gitExec(["-C", cloneDir, "add", "-A"]);
@@ -26828,29 +26821,7 @@ async function runPreview({
     },
     ignoreReturnCode: true
   });
-  let parsed;
-  try {
-    const lines = stdout.split("\n");
-    let endIdx = -1;
-    for (let i = lines.length - 1; i >= 0; i--) {
-      if (lines[i].trimEnd() === "}") {
-        endIdx = i;
-        break;
-      }
-    }
-    if (endIdx !== -1) {
-      let startIdx = endIdx;
-      for (let i = endIdx; i >= 0; i--) {
-        if (lines[i].trimStart().startsWith("{")) {
-          startIdx = i;
-          break;
-        }
-      }
-      parsed = JSON.parse(lines.slice(startIdx, endIdx + 1).join("\n"));
-    }
-  } catch {
-    core6.warning(`Failed to parse preview output for group '${groupName}'`);
-  }
+  const parsed = parseJsonFromOutput(stdout, groupName);
   if (exitCode !== 0 || parsed?.status === "error" || !parsed) {
     return {
       status: "error",
@@ -26879,6 +26850,33 @@ async function runPreview({
     registryUrl: preview.registry_url,
     outputPath: preview.output_path
   };
+}
+function parseJsonFromOutput(stdout, groupName) {
+  try {
+    return JSON.parse(stdout.trim());
+  } catch {
+  }
+  try {
+    let depth = 0;
+    let endPos = -1;
+    for (let i = stdout.length - 1; i >= 0; i--) {
+      const char = stdout[i];
+      if (char === "}") {
+        if (depth === 0) {
+          endPos = i;
+        }
+        depth++;
+      } else if (char === "{") {
+        depth--;
+        if (depth === 0 && endPos !== -1) {
+          return JSON.parse(stdout.slice(i, endPos + 1));
+        }
+      }
+    }
+  } catch {
+  }
+  core6.warning(`Failed to parse preview output for group '${groupName}'`);
+  return void 0;
 }
 
 // src/main.ts

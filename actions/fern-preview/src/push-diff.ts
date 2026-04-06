@@ -66,24 +66,15 @@ export async function pushDiffBranch({
     // Create preview branch
     await gitExec(["-C", cloneDir, "checkout", "-b", branchName]);
 
-    // Remove existing files except protected ones
-    const protectedNames = new Set([".git", ".github", ".gitignore", ".fernignore"]);
-    const existingEntries = fs.readdirSync(cloneDir);
-    for (const entry of existingEntries) {
-      if (!protectedNames.has(entry)) {
-        fs.rmSync(path.join(cloneDir, entry), { recursive: true, force: true });
-      }
-    }
-
-    // Copy generated files into the clone, skipping protected paths
-    const outputEntries = fs.readdirSync(outputPath);
-    for (const entry of outputEntries) {
-      if (!protectedNames.has(entry)) {
-        const src = path.join(outputPath, entry);
-        const dest = path.join(cloneDir, entry);
-        fs.cpSync(src, dest, { recursive: true });
-      }
-    }
+    // Overlay generated files onto the clone. We only overwrite files that
+    // the generator produces — non-generated files in the SDK repo (LICENSE,
+    // CONTRIBUTING.md, CHANGELOG.md, etc.) are left untouched. The .git
+    // directory is always excluded to avoid corrupting the clone.
+    fs.cpSync(outputPath, cloneDir, {
+      recursive: true,
+      filter: (src) =>
+        !src.includes(`${path.sep}.git${path.sep}`) && !src.endsWith(`${path.sep}.git`),
+    });
 
     // Configure git for commit
     await gitExec(["-C", cloneDir, "config", "user.name", "fern-preview[bot]"]);

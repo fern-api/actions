@@ -72,21 +72,27 @@ export async function detectTypeScriptGroups(): Promise<DetectedGroup[]> {
   return results;
 }
 
+// Max depth for recursive walk (fern/ → apis/<name>/ → generators.yml = 3 levels)
+const MAX_WALK_DEPTH = 5;
+
 function findGeneratorsYml(dir: string): string[] {
   const results: string[] = [];
 
-  function walk(currentDir: string): void {
+  function walk(currentDir: string, depth: number): void {
+    if (depth > MAX_WALK_DEPTH) {
+      return;
+    }
     const entries = fs.readdirSync(currentDir, { withFileTypes: true });
     for (const entry of entries) {
       const fullPath = path.join(currentDir, entry.name);
       if (entry.isDirectory() && entry.name !== "node_modules") {
-        walk(fullPath);
+        walk(fullPath, depth + 1);
       } else if (entry.isFile() && entry.name === "generators.yml") {
         results.push(fullPath);
       }
     }
   }
 
-  walk(dir);
+  walk(dir, 0);
   return results;
 }

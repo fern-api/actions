@@ -67,36 +67,10 @@ export async function runPreview({
     ignoreReturnCode: true,
   });
 
-  // Parse JSON output — fern sdk preview --json writes a pretty-printed JSON
-  // object to stdout. Log lines may appear before/after it, so we can't just
-  // JSON.parse(stdout). We scan lines in reverse for the closing "}" then walk
-  // back to the opening "{". This assumes the JSON is pretty-printed (closing
-  // brace on its own line) — if the CLI ever emits single-line JSON, this
-  // heuristic will need updating.
-  let parsed: FernPreviewJson | undefined;
-  try {
-    const lines = stdout.split("\n");
-    let endIdx = -1;
-    for (let i = lines.length - 1; i >= 0; i--) {
-      if (lines[i].trimEnd() === "}") {
-        endIdx = i;
-        break;
-      }
-    }
-    if (endIdx !== -1) {
-      // Walk backwards to find the matching opening brace line
-      let startIdx = endIdx;
-      for (let i = endIdx; i >= 0; i--) {
-        if (lines[i].trimStart().startsWith("{")) {
-          startIdx = i;
-          break;
-        }
-      }
-      parsed = JSON.parse(lines.slice(startIdx, endIdx + 1).join("\n")) as FernPreviewJson;
-    }
-  } catch {
-    core.warning(`Failed to parse preview output for group '${groupName}'`);
-  }
+  // Parse JSON from stdout. The CLI writes a JSON object but may also emit
+  // log lines before/after it. Try clean parse first, then fall back to
+  // extracting the last balanced {...} block via brace counting.
+  const parsed = parseJsonFromOutput(stdout, groupName);
 
   if (exitCode !== 0 || parsed?.status === "error" || !parsed) {
     return {
@@ -131,4 +105,48 @@ export async function runPreview({
     registryUrl: preview.registry_url,
     outputPath: preview.output_path,
   };
+}
+
+/**
+ * Extracts a JSON object from stdout that may contain non-JSON log lines.
+ * Tries JSON.parse(stdout) first (clean output), then falls back to finding
+ * the last balanced {...} block by counting braces from the end. This handles
+ * both pretty-printed and compact JSON.
+ */
+export function parseJsonFromOutput(
+  stdout: string,
+  groupName: string
+): FernPreviewJson | undefined {
+  // Happy path: stdout is clean JSON
+  try {
+    return JSON.parse(stdout.trim()) as FernPreviewJson;
+  } catch {
+    // Expected when log lines are mixed in
+  }
+
+  // Fallback: find the last balanced JSON object by scanning backwards
+  try {
+    let depth = 0;
+    let endPos = -1;
+
+    for (let i = stdout.length - 1; i >= 0; i--) {
+      const char = stdout[i];
+      if (char === "}") {
+        if (depth === 0) {
+          endPos = i;
+        }
+        depth++;
+      } else if (char === "{") {
+        depth--;
+        if (depth === 0 && endPos !== -1) {
+          return JSON.parse(stdout.slice(i, endPos + 1)) as FernPreviewJson;
+        }
+      }
+    }
+  } catch {
+    // Fall through to warning
+  }
+
+  core.warning(`Failed to parse preview output for group '${groupName}'`);
+  return undefined;
 }
