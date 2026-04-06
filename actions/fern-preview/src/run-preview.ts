@@ -28,7 +28,6 @@ interface FernPreviewJson {
     package_name: string;
     registry_url: string;
     output_path?: string;
-    sdk_repo?: string;
   }>;
 }
 
@@ -97,7 +96,7 @@ export async function runPreview({
   return {
     status: "success",
     groupName,
-    sdkRepo: preview.sdk_repo,
+    sdkRepo: undefined,
     previewId: preview.preview_id,
     installCommand: preview.install,
     packageName: preview.package_name,

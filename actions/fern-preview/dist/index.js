@@ -26842,7 +26842,7 @@ async function runPreview({
   return {
     status: "success",
     groupName,
-    sdkRepo: preview.sdk_repo,
+    sdkRepo: void 0,
     previewId: preview.preview_id,
     installCommand: preview.install,
     packageName: preview.package_name,
