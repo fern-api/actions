@@ -26700,7 +26700,6 @@ var exec3 = __toESM(require_exec());
 async function pushDiffBranch({
   sdkRepo,
   outputPath,
-  previewId,
   prNumber,
   githubToken
 }) {
@@ -26713,8 +26712,7 @@ async function pushDiffBranch({
     core5.warning(`Output path is empty: ${outputPath}`);
     return void 0;
   }
-  const branchSuffix = prNumber != null ? `pr-${prNumber}` : previewId;
-  const branchName = `fern-preview-${branchSuffix}`;
+  const branchName = `fern-preview-pr-${prNumber}`;
   const cloneDir = fs2.mkdtempSync(path2.join(os.tmpdir(), "sdk-diff-"));
   const cloneUrl = `https://x-access-token:${githubToken}@github.com/${sdkRepo}.git`;
   try {
@@ -26757,7 +26755,7 @@ async function pushDiffBranch({
       core5.info(`No SDK changes detected for ${sdkRepo}`);
       return void 0;
     }
-    await exec3.exec("git", ["-C", cloneDir, "commit", "-m", `SDK Preview: ${previewId}`]);
+    await exec3.exec("git", ["-C", cloneDir, "commit", "-m", `SDK Preview for PR #${prNumber}`]);
     await exec3.exec("git", ["-C", cloneDir, "push", "-f", "origin", branchName], {
       silent: true
     });
@@ -26877,29 +26875,30 @@ async function run() {
       }
       core7.endGroup();
     }
-    for (const result of results) {
-      if (result.status === "success" && result.sdkRepo && result.outputPath) {
-        core7.startGroup(`SDK diff: ${result.groupName} \u2192 ${result.sdkRepo}`);
-        try {
-          const diffUrl = await pushDiffBranch({
-            sdkRepo: result.sdkRepo,
-            outputPath: result.outputPath,
-            previewId: result.previewId ?? "unknown",
-            prNumber,
-            githubToken
-          });
-          result.diffUrl = diffUrl;
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          core7.warning(`Failed to push diff for '${result.groupName}': ${message}`);
+    if (prNumber != null) {
+      for (const result of results) {
+        if (result.status === "success" && result.sdkRepo && result.outputPath) {
+          core7.startGroup(`SDK diff: ${result.groupName} \u2192 ${result.sdkRepo}`);
+          try {
+            const diffUrl = await pushDiffBranch({
+              sdkRepo: result.sdkRepo,
+              outputPath: result.outputPath,
+              prNumber,
+              githubToken
+            });
+            result.diffUrl = diffUrl;
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            core7.warning(`Failed to push diff for '${result.groupName}': ${message}`);
+          }
+          core7.endGroup();
         }
-        core7.endGroup();
       }
     }
     if (prNumber) {
       await postOrUpdateComment({ results, githubToken, prNumber });
     } else {
-      core7.info("Not a pull request event \u2014 skipping PR comment.");
+      core7.info("Not a pull request event \u2014 skipping PR comment and SDK diff.");
       for (const result of results) {
         if (result.status === "success" && result.installCommand) {
           core7.info(`${result.groupName}: ${result.installCommand}`);

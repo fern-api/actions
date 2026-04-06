@@ -135,4 +135,5 @@ When adding a new mirrored action, grant `ACTIONS_MIRROR_TOKEN` write access to 
 |---|---|---|
 | `actions/sync-openapi` | `fern-api/sync-openapi` | `uses: fern-api/sync-openapi@v4` |
 | `actions/setup-fern-cli` | `fern-api/setup-fern-cli` | `uses: fern-api/setup-fern-cli@v1` |
+| `actions/fern-preview` | `fern-api/fern-preview` | `uses: fern-api/fern-preview@v1` |
 | `actions/example-action` | _(not mirrored — template only)_ | — |

@@ -7,14 +7,12 @@ import * as exec from "@actions/exec";
 export async function pushDiffBranch({
   sdkRepo,
   outputPath,
-  previewId,
   prNumber,
   githubToken,
 }: {
   sdkRepo: string;
   outputPath: string;
-  previewId: string;
-  prNumber: number | undefined;
+  prNumber: number;
   githubToken: string;
 }): Promise<string | undefined> {
   if (!fs.existsSync(outputPath)) {
@@ -28,9 +26,7 @@ export async function pushDiffBranch({
     return undefined;
   }
 
-  // Include PR number in branch name for uniqueness across concurrent PRs
-  const branchSuffix = prNumber != null ? `pr-${prNumber}` : previewId;
-  const branchName = `fern-preview-${branchSuffix}`;
+  const branchName = `fern-preview-pr-${prNumber}`;
   const cloneDir = fs.mkdtempSync(path.join(os.tmpdir(), "sdk-diff-"));
   const cloneUrl = `https://x-access-token:${githubToken}@github.com/${sdkRepo}.git`;
 
@@ -92,7 +88,7 @@ export async function pushDiffBranch({
     }
 
     // Commit and push — silent to avoid logging the token in the remote URL
-    await exec.exec("git", ["-C", cloneDir, "commit", "-m", `SDK Preview: ${previewId}`]);
+    await exec.exec("git", ["-C", cloneDir, "commit", "-m", `SDK Preview for PR #${prNumber}`]);
     await exec.exec("git", ["-C", cloneDir, "push", "-f", "origin", branchName], {
       silent: true,
     });

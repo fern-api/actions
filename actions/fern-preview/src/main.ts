@@ -55,24 +55,27 @@ async function run(): Promise<void> {
       core.endGroup();
     }
 
-    // 4. Push diff branches for successful previews that have SDK repos
-    for (const result of results) {
-      if (result.status === "success" && result.sdkRepo && result.outputPath) {
-        core.startGroup(`SDK diff: ${result.groupName} → ${result.sdkRepo}`);
-        try {
-          const diffUrl = await pushDiffBranch({
-            sdkRepo: result.sdkRepo,
-            outputPath: result.outputPath,
-            previewId: result.previewId ?? "unknown",
-            prNumber,
-            githubToken,
-          });
-          result.diffUrl = diffUrl;
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          core.warning(`Failed to push diff for '${result.groupName}': ${message}`);
+    // 4. Push diff branches for successful previews that have SDK repos.
+    //    Only when running in a PR context — outside PRs there's no comment
+    //    to attach the diff link to and no PR number for a unique branch name.
+    if (prNumber != null) {
+      for (const result of results) {
+        if (result.status === "success" && result.sdkRepo && result.outputPath) {
+          core.startGroup(`SDK diff: ${result.groupName} → ${result.sdkRepo}`);
+          try {
+            const diffUrl = await pushDiffBranch({
+              sdkRepo: result.sdkRepo,
+              outputPath: result.outputPath,
+              prNumber,
+              githubToken,
+            });
+            result.diffUrl = diffUrl;
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            core.warning(`Failed to push diff for '${result.groupName}': ${message}`);
+          }
+          core.endGroup();
         }
-        core.endGroup();
       }
     }
 
@@ -80,7 +83,7 @@ async function run(): Promise<void> {
     if (prNumber) {
       await postOrUpdateComment({ results, githubToken, prNumber });
     } else {
-      core.info("Not a pull request event — skipping PR comment.");
+      core.info("Not a pull request event — skipping PR comment and SDK diff.");
       for (const result of results) {
         if (result.status === "success" && result.installCommand) {
           core.info(`${result.groupName}: ${result.installCommand}`);
