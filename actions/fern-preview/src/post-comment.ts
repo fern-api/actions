@@ -18,24 +18,17 @@ export async function postOrUpdateComment({
 
   const body = formatComment(results);
 
-  // Find existing comment by marker
-  const { data: comments } = await octokit.rest.issues.listComments({
-    owner,
-    repo,
-    issue_number: prNumber,
-    per_page: 100,
-  });
-
-  const existing = comments.find((c) => c.body?.includes(COMMENT_MARKER));
+  // Paginate through all comments to find the marker
+  const existing = await findExistingComment(octokit, owner, repo, prNumber);
 
   if (existing) {
     await octokit.rest.issues.updateComment({
       owner,
       repo,
-      comment_id: existing.id,
+      comment_id: existing,
       body,
     });
-    core.info(`Updated existing PR comment (id: ${existing.id})`);
+    core.info(`Updated existing PR comment (id: ${existing})`);
   } else {
     await octokit.rest.issues.createComment({
       owner,
@@ -47,7 +40,27 @@ export async function postOrUpdateComment({
   }
 }
 
-function formatComment(results: PreviewResult[]): string {
+async function findExistingComment(
+  octokit: ReturnType<typeof github.getOctokit>,
+  owner: string,
+  repo: string,
+  prNumber: number
+): Promise<number | undefined> {
+  for await (const response of octokit.paginate.iterator(octokit.rest.issues.listComments, {
+    owner,
+    repo,
+    issue_number: prNumber,
+    per_page: 100,
+  })) {
+    const match = response.data.find((c) => c.body?.includes(COMMENT_MARKER));
+    if (match) {
+      return match.id;
+    }
+  }
+  return undefined;
+}
+
+export function formatComment(results: PreviewResult[]): string {
   let rows = "";
 
   for (const result of results) {

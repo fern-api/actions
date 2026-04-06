@@ -70,6 +70,9 @@ jobs:
             setup-fern-cli)
               MIRROR_REPO="fern-api/setup-fern-cli"
               ;;
+            fern-preview)
+              MIRROR_REPO="fern-api/fern-preview"
+              ;;
             *)
               echo "ERROR: Unknown action '$ACTION_NAME' — no mirror repo configured."
               exit 1

@@ -63,13 +63,14 @@ export async function runPreview({
     ignoreReturnCode: true,
   });
 
-  // Parse JSON output — fern sdk preview --json writes a JSON object to stdout
+  // Parse JSON output — fern sdk preview --json writes a JSON object to stdout.
+  // The output may contain non-JSON log lines, so we find the last top-level
+  // JSON object to avoid greedily matching across unrelated braces.
   let parsed: FernPreviewJson | undefined;
   try {
-    // Find the JSON object in stdout (may have other log lines)
-    const jsonMatch = stdout.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[0]) as FernPreviewJson;
+    const lastBrace = stdout.lastIndexOf("{");
+    if (lastBrace !== -1) {
+      parsed = JSON.parse(stdout.slice(lastBrace)) as FernPreviewJson;
     }
   } catch {
     core.warning(`Failed to parse preview output for group '${groupName}'`);

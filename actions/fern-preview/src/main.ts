@@ -25,6 +25,9 @@ async function run(): Promise<void> {
       `Found ${groups.length} TypeScript group(s): ${groups.map((g) => g.groupName).join(", ")}`
     );
 
+    // Resolve PR number early — used for branch naming and comment posting
+    const prNumber = github.context.payload.pull_request?.number;
+
     // 3. Run preview for each group (publish to registry + write to disk)
     const results: PreviewResult[] = [];
     for (const group of groups) {
@@ -37,7 +40,8 @@ async function run(): Promise<void> {
           apiName: group.apiName,
           fernToken,
         });
-        results.push({ ...result, groupName: group.groupName, sdkRepo: group.sdkRepo });
+        // Overlay sdkRepo from detect-groups (generator config may not include it in JSON output)
+        results.push({ ...result, sdkRepo: result.sdkRepo ?? group.sdkRepo });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         core.warning(`Preview failed for group '${group.groupName}': ${message}`);
@@ -60,6 +64,7 @@ async function run(): Promise<void> {
             sdkRepo: result.sdkRepo,
             outputPath: result.outputPath,
             previewId: result.previewId ?? "unknown",
+            prNumber,
             githubToken,
           });
           result.diffUrl = diffUrl;
@@ -72,8 +77,6 @@ async function run(): Promise<void> {
     }
 
     // 5. Post or update PR comment
-    const prNumber = github.context.payload.pull_request?.number;
-
     if (prNumber) {
       await postOrUpdateComment({ results, githubToken, prNumber });
     } else {

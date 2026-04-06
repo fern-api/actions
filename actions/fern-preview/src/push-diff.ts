@@ -8,11 +8,13 @@ export async function pushDiffBranch({
   sdkRepo,
   outputPath,
   previewId,
+  prNumber,
   githubToken,
 }: {
   sdkRepo: string;
   outputPath: string;
   previewId: string;
+  prNumber: number | undefined;
   githubToken: string;
 }): Promise<string | undefined> {
   if (!fs.existsSync(outputPath)) {
@@ -26,13 +28,17 @@ export async function pushDiffBranch({
     return undefined;
   }
 
-  const branchName = `fern-preview-${previewId}`;
+  // Include PR number in branch name for uniqueness across concurrent PRs
+  const branchSuffix = prNumber != null ? `pr-${prNumber}` : previewId;
+  const branchName = `fern-preview-${branchSuffix}`;
   const cloneDir = fs.mkdtempSync(path.join(os.tmpdir(), "sdk-diff-"));
   const cloneUrl = `https://x-access-token:${githubToken}@github.com/${sdkRepo}.git`;
 
   try {
-    // Clone target SDK repo (shallow)
-    await exec.exec("git", ["clone", cloneUrl, cloneDir, "--depth", "1"]);
+    // Clone target SDK repo (shallow) — silent to avoid logging the token
+    await exec.exec("git", ["clone", cloneUrl, cloneDir, "--depth", "1"], {
+      silent: true,
+    });
 
     // Determine default branch
     let defaultBranch = "main";
@@ -66,7 +72,7 @@ export async function pushDiffBranch({
     }
 
     // Copy generated files into the clone
-    copyDirectory(outputPath, cloneDir);
+    fs.cpSync(outputPath, cloneDir, { recursive: true });
 
     // Configure git for commit
     await exec.exec("git", ["-C", cloneDir, "config", "user.name", "fern-preview[bot]"]);
@@ -85,9 +91,11 @@ export async function pushDiffBranch({
       return undefined;
     }
 
-    // Commit and push
+    // Commit and push — silent to avoid logging the token in the remote URL
     await exec.exec("git", ["-C", cloneDir, "commit", "-m", `SDK Preview: ${previewId}`]);
-    await exec.exec("git", ["-C", cloneDir, "push", "-f", "origin", branchName]);
+    await exec.exec("git", ["-C", cloneDir, "push", "-f", "origin", branchName], {
+      silent: true,
+    });
 
     const diffUrl = `https://github.com/${sdkRepo}/compare/${defaultBranch}...${branchName}`;
     core.info(`SDK diff pushed: ${diffUrl}`);
@@ -95,19 +103,5 @@ export async function pushDiffBranch({
   } finally {
     // Cleanup
     fs.rmSync(cloneDir, { recursive: true, force: true });
-  }
-}
-
-function copyDirectory(src: string, dest: string): void {
-  const entries = fs.readdirSync(src, { withFileTypes: true });
-  for (const entry of entries) {
-    const srcPath = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
-    if (entry.isDirectory()) {
-      fs.mkdirSync(destPath, { recursive: true });
-      copyDirectory(srcPath, destPath);
-    } else {
-      fs.copyFileSync(srcPath, destPath);
-    }
   }
 }

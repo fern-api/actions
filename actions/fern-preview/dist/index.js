@@ -23939,30 +23939,10 @@ var require_github = __commonJS({
 var core7 = __toESM(require_core());
 var github2 = __toESM(require_github());
 
-// src/install-fern.ts
-var core = __toESM(require_core());
-var exec = __toESM(require_exec());
-async function installFernCli(version) {
-  const pkg = version === "latest" ? "fern-api" : `fern-api@${version}`;
-  core.info(`Installing Fern CLI: ${pkg}`);
-  await exec.exec("npm", ["install", "-g", pkg]);
-  let installedVersion = "";
-  await exec.exec("fern", ["--version"], {
-    env: { ...process.env, FERN_NO_VERSION_REDIRECTION: "true" },
-    listeners: {
-      stdout: (data) => {
-        installedVersion += data.toString();
-      }
-    },
-    silent: true
-  });
-  core.info(`Installed Fern CLI version: ${installedVersion.trim()}`);
-}
-
 // src/detect-groups.ts
 var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
-var core3 = __toESM(require_core());
+var core2 = __toESM(require_core());
 
 // ../../node_modules/.pnpm/js-yaml@4.1.1/node_modules/js-yaml/dist/js-yaml.mjs
 function isNothing(subject) {
@@ -24533,7 +24513,7 @@ var json = failsafe.extend({
     float
   ]
 });
-var core2 = json;
+var core = json;
 var YAML_DATE_REGEXP = new RegExp(
   "^([0-9][0-9][0-9][0-9])-([0-9][0-9])-([0-9][0-9])$"
 );
@@ -24747,7 +24727,7 @@ var set = new type("tag:yaml.org,2002:set", {
   resolve: resolveYamlSet,
   construct: constructYamlSet
 });
-var _default = core2.extend({
+var _default = core.extend({
   implicit: [
     timestamp,
     merge2
@@ -26556,11 +26536,11 @@ async function detectTypeScriptGroups() {
   const results = [];
   const fernDir = path.resolve("fern");
   if (!fs.existsSync(fernDir)) {
-    core3.warning("No fern/ directory found in the repository root.");
+    core2.warning("No fern/ directory found in the repository root.");
     return results;
   }
   const generatorsFiles = findGeneratorsYml(fernDir);
-  core3.info(`Found ${generatorsFiles.length} generators.yml file(s)`);
+  core2.info(`Found ${generatorsFiles.length} generators.yml file(s)`);
   for (const filePath of generatorsFiles) {
     const content = fs.readFileSync(filePath, "utf8");
     const config = load(content);
@@ -26613,201 +26593,28 @@ function findGeneratorsYml(dir) {
   return results;
 }
 
-// src/run-preview.ts
-var os = __toESM(require("os"));
-var path2 = __toESM(require("path"));
-var core4 = __toESM(require_core());
-var exec3 = __toESM(require_exec());
-async function runPreview({
-  groupName,
-  apiName,
-  fernToken
-}) {
-  const outputDir = path2.join(os.tmpdir(), "fern-preview", groupName);
-  const args = [
-    "sdk",
-    "preview",
-    "--json",
-    "--group",
-    groupName,
-    "--output",
-    outputDir
-  ];
-  if (apiName) {
-    args.push("--api", apiName);
-  }
-  let stdout = "";
-  let stderr = "";
-  const exitCode = await exec3.exec("fern", args, {
-    env: { ...process.env, FERN_TOKEN: fernToken },
+// src/install-fern.ts
+var core3 = __toESM(require_core());
+var exec = __toESM(require_exec());
+async function installFernCli(version) {
+  const pkg = version === "latest" ? "fern-api" : `fern-api@${version}`;
+  core3.info(`Installing Fern CLI: ${pkg}`);
+  await exec.exec("npm", ["install", "-g", pkg]);
+  let installedVersion = "";
+  await exec.exec("fern", ["--version"], {
+    env: { ...process.env, FERN_NO_VERSION_REDIRECTION: "true" },
     listeners: {
       stdout: (data) => {
-        stdout += data.toString();
-      },
-      stderr: (data) => {
-        stderr += data.toString();
+        installedVersion += data.toString();
       }
     },
-    ignoreReturnCode: true
+    silent: true
   });
-  let parsed;
-  try {
-    const jsonMatch = stdout.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[0]);
-    }
-  } catch {
-    core4.warning(`Failed to parse preview output for group '${groupName}'`);
-  }
-  if (exitCode !== 0 || parsed?.status === "error" || !parsed) {
-    return {
-      status: "error",
-      groupName,
-      sdkRepo: void 0,
-      error: (parsed?.message ?? stderr.trim()) || `Exit code ${exitCode}`
-    };
-  }
-  const preview = parsed.previews?.[0];
-  if (!preview) {
-    return {
-      status: "error",
-      groupName,
-      sdkRepo: void 0,
-      error: "No preview entries in output"
-    };
-  }
-  return {
-    status: "success",
-    groupName,
-    sdkRepo: preview.sdk_repo,
-    previewId: preview.preview_id,
-    installCommand: preview.install,
-    packageName: preview.package_name,
-    version: preview.version,
-    registryUrl: preview.registry_url,
-    outputPath: preview.output_path
-  };
-}
-
-// src/push-diff.ts
-var fs2 = __toESM(require("fs"));
-var os2 = __toESM(require("os"));
-var path3 = __toESM(require("path"));
-var core5 = __toESM(require_core());
-var exec5 = __toESM(require_exec());
-async function pushDiffBranch({
-  sdkRepo,
-  outputPath,
-  previewId,
-  githubToken
-}) {
-  if (!fs2.existsSync(outputPath)) {
-    core5.warning(`Output path does not exist: ${outputPath}`);
-    return void 0;
-  }
-  const entries = fs2.readdirSync(outputPath);
-  if (entries.length === 0) {
-    core5.warning(`Output path is empty: ${outputPath}`);
-    return void 0;
-  }
-  const branchName = `fern-preview-${previewId}`;
-  const cloneDir = fs2.mkdtempSync(path3.join(os2.tmpdir(), "sdk-diff-"));
-  const cloneUrl = `https://x-access-token:${githubToken}@github.com/${sdkRepo}.git`;
-  try {
-    await exec5.exec("git", ["clone", cloneUrl, cloneDir, "--depth", "1"]);
-    let defaultBranch = "main";
-    let refOutput = "";
-    const refExitCode = await exec5.exec(
-      "git",
-      ["-C", cloneDir, "symbolic-ref", "refs/remotes/origin/HEAD"],
-      {
-        listeners: {
-          stdout: (data) => {
-            refOutput += data.toString();
-          }
-        },
-        ignoreReturnCode: true
-      }
-    );
-    if (refExitCode === 0 && refOutput.trim()) {
-      defaultBranch = refOutput.trim().replace("refs/remotes/origin/", "");
-    }
-    await exec5.exec("git", ["-C", cloneDir, "checkout", "-b", branchName]);
-    const protectedNames = /* @__PURE__ */ new Set([
-      ".git",
-      ".github",
-      ".gitignore",
-      ".fernignore"
-    ]);
-    const existingEntries = fs2.readdirSync(cloneDir);
-    for (const entry of existingEntries) {
-      if (!protectedNames.has(entry)) {
-        fs2.rmSync(path3.join(cloneDir, entry), { recursive: true, force: true });
-      }
-    }
-    copyDirectory(outputPath, cloneDir);
-    await exec5.exec("git", [
-      "-C",
-      cloneDir,
-      "config",
-      "user.name",
-      "fern-preview[bot]"
-    ]);
-    await exec5.exec("git", [
-      "-C",
-      cloneDir,
-      "config",
-      "user.email",
-      "noreply@buildwithfern.com"
-    ]);
-    await exec5.exec("git", ["-C", cloneDir, "add", "-A"]);
-    const diffExitCode = await exec5.exec(
-      "git",
-      ["-C", cloneDir, "diff", "--cached", "--quiet"],
-      { ignoreReturnCode: true }
-    );
-    if (diffExitCode === 0) {
-      core5.info(`No SDK changes detected for ${sdkRepo}`);
-      return void 0;
-    }
-    await exec5.exec("git", [
-      "-C",
-      cloneDir,
-      "commit",
-      "-m",
-      `SDK Preview: ${previewId}`
-    ]);
-    await exec5.exec("git", [
-      "-C",
-      cloneDir,
-      "push",
-      "-f",
-      "origin",
-      branchName
-    ]);
-    const diffUrl = `https://github.com/${sdkRepo}/compare/${defaultBranch}...${branchName}`;
-    core5.info(`SDK diff pushed: ${diffUrl}`);
-    return diffUrl;
-  } finally {
-    fs2.rmSync(cloneDir, { recursive: true, force: true });
-  }
-}
-function copyDirectory(src, dest) {
-  const entries = fs2.readdirSync(src, { withFileTypes: true });
-  for (const entry of entries) {
-    const srcPath = path3.join(src, entry.name);
-    const destPath = path3.join(dest, entry.name);
-    if (entry.isDirectory()) {
-      fs2.mkdirSync(destPath, { recursive: true });
-      copyDirectory(srcPath, destPath);
-    } else {
-      fs2.copyFileSync(srcPath, destPath);
-    }
-  }
+  core3.info(`Installed Fern CLI version: ${installedVersion.trim()}`);
 }
 
 // src/post-comment.ts
-var core6 = __toESM(require_core());
+var core4 = __toESM(require_core());
 var github = __toESM(require_github());
 var COMMENT_MARKER = "<!-- fern-sdk-preview -->";
 async function postOrUpdateComment({
@@ -26818,21 +26625,15 @@ async function postOrUpdateComment({
   const octokit = github.getOctokit(githubToken);
   const { owner, repo } = github.context.repo;
   const body = formatComment(results);
-  const { data: comments } = await octokit.rest.issues.listComments({
-    owner,
-    repo,
-    issue_number: prNumber,
-    per_page: 100
-  });
-  const existing = comments.find((c) => c.body?.includes(COMMENT_MARKER));
+  const existing = await findExistingComment(octokit, owner, repo, prNumber);
   if (existing) {
     await octokit.rest.issues.updateComment({
       owner,
       repo,
-      comment_id: existing.id,
+      comment_id: existing,
       body
     });
-    core6.info(`Updated existing PR comment (id: ${existing.id})`);
+    core4.info(`Updated existing PR comment (id: ${existing})`);
   } else {
     await octokit.rest.issues.createComment({
       owner,
@@ -26840,8 +26641,22 @@ async function postOrUpdateComment({
       issue_number: prNumber,
       body
     });
-    core6.info("Created new PR comment");
+    core4.info("Created new PR comment");
   }
+}
+async function findExistingComment(octokit, owner, repo, prNumber) {
+  for await (const response of octokit.paginate.iterator(octokit.rest.issues.listComments, {
+    owner,
+    repo,
+    issue_number: prNumber,
+    per_page: 100
+  })) {
+    const match = response.data.find((c) => c.body?.includes(COMMENT_MARKER));
+    if (match) {
+      return match.id;
+    }
+  }
+  return void 0;
 }
 function formatComment(results) {
   let rows = "";
@@ -26876,6 +26691,152 @@ ${rows}${errorSection}
 `;
 }
 
+// src/push-diff.ts
+var fs2 = __toESM(require("fs"));
+var os = __toESM(require("os"));
+var path2 = __toESM(require("path"));
+var core5 = __toESM(require_core());
+var exec3 = __toESM(require_exec());
+async function pushDiffBranch({
+  sdkRepo,
+  outputPath,
+  previewId,
+  prNumber,
+  githubToken
+}) {
+  if (!fs2.existsSync(outputPath)) {
+    core5.warning(`Output path does not exist: ${outputPath}`);
+    return void 0;
+  }
+  const entries = fs2.readdirSync(outputPath);
+  if (entries.length === 0) {
+    core5.warning(`Output path is empty: ${outputPath}`);
+    return void 0;
+  }
+  const branchSuffix = prNumber != null ? `pr-${prNumber}` : previewId;
+  const branchName = `fern-preview-${branchSuffix}`;
+  const cloneDir = fs2.mkdtempSync(path2.join(os.tmpdir(), "sdk-diff-"));
+  const cloneUrl = `https://x-access-token:${githubToken}@github.com/${sdkRepo}.git`;
+  try {
+    await exec3.exec("git", ["clone", cloneUrl, cloneDir, "--depth", "1"], {
+      silent: true
+    });
+    let defaultBranch = "main";
+    let refOutput = "";
+    const refExitCode = await exec3.exec(
+      "git",
+      ["-C", cloneDir, "symbolic-ref", "refs/remotes/origin/HEAD"],
+      {
+        listeners: {
+          stdout: (data) => {
+            refOutput += data.toString();
+          }
+        },
+        ignoreReturnCode: true
+      }
+    );
+    if (refExitCode === 0 && refOutput.trim()) {
+      defaultBranch = refOutput.trim().replace("refs/remotes/origin/", "");
+    }
+    await exec3.exec("git", ["-C", cloneDir, "checkout", "-b", branchName]);
+    const protectedNames = /* @__PURE__ */ new Set([".git", ".github", ".gitignore", ".fernignore"]);
+    const existingEntries = fs2.readdirSync(cloneDir);
+    for (const entry of existingEntries) {
+      if (!protectedNames.has(entry)) {
+        fs2.rmSync(path2.join(cloneDir, entry), { recursive: true, force: true });
+      }
+    }
+    fs2.cpSync(outputPath, cloneDir, { recursive: true });
+    await exec3.exec("git", ["-C", cloneDir, "config", "user.name", "fern-preview[bot]"]);
+    await exec3.exec("git", ["-C", cloneDir, "config", "user.email", "noreply@buildwithfern.com"]);
+    await exec3.exec("git", ["-C", cloneDir, "add", "-A"]);
+    const diffExitCode = await exec3.exec("git", ["-C", cloneDir, "diff", "--cached", "--quiet"], {
+      ignoreReturnCode: true
+    });
+    if (diffExitCode === 0) {
+      core5.info(`No SDK changes detected for ${sdkRepo}`);
+      return void 0;
+    }
+    await exec3.exec("git", ["-C", cloneDir, "commit", "-m", `SDK Preview: ${previewId}`]);
+    await exec3.exec("git", ["-C", cloneDir, "push", "-f", "origin", branchName], {
+      silent: true
+    });
+    const diffUrl = `https://github.com/${sdkRepo}/compare/${defaultBranch}...${branchName}`;
+    core5.info(`SDK diff pushed: ${diffUrl}`);
+    return diffUrl;
+  } finally {
+    fs2.rmSync(cloneDir, { recursive: true, force: true });
+  }
+}
+
+// src/run-preview.ts
+var os2 = __toESM(require("os"));
+var path3 = __toESM(require("path"));
+var core6 = __toESM(require_core());
+var exec5 = __toESM(require_exec());
+async function runPreview({
+  groupName,
+  apiName,
+  fernToken
+}) {
+  const outputDir = path3.join(os2.tmpdir(), "fern-preview", groupName);
+  const args = ["sdk", "preview", "--json", "--group", groupName, "--output", outputDir];
+  if (apiName) {
+    args.push("--api", apiName);
+  }
+  let stdout = "";
+  let stderr = "";
+  const exitCode = await exec5.exec("fern", args, {
+    env: { ...process.env, FERN_TOKEN: fernToken },
+    listeners: {
+      stdout: (data) => {
+        stdout += data.toString();
+      },
+      stderr: (data) => {
+        stderr += data.toString();
+      }
+    },
+    ignoreReturnCode: true
+  });
+  let parsed;
+  try {
+    const lastBrace = stdout.lastIndexOf("{");
+    if (lastBrace !== -1) {
+      parsed = JSON.parse(stdout.slice(lastBrace));
+    }
+  } catch {
+    core6.warning(`Failed to parse preview output for group '${groupName}'`);
+  }
+  if (exitCode !== 0 || parsed?.status === "error" || !parsed) {
+    return {
+      status: "error",
+      groupName,
+      sdkRepo: void 0,
+      error: (parsed?.message ?? stderr.trim()) || `Exit code ${exitCode}`
+    };
+  }
+  const preview = parsed.previews?.[0];
+  if (!preview) {
+    return {
+      status: "error",
+      groupName,
+      sdkRepo: void 0,
+      error: "No preview entries in output"
+    };
+  }
+  return {
+    status: "success",
+    groupName,
+    sdkRepo: preview.sdk_repo,
+    previewId: preview.preview_id,
+    installCommand: preview.install,
+    packageName: preview.package_name,
+    version: preview.version,
+    registryUrl: preview.registry_url,
+    outputPath: preview.output_path
+  };
+}
+
 // src/main.ts
 async function run() {
   try {
@@ -26891,16 +26852,19 @@ async function run() {
     core7.info(
       `Found ${groups.length} TypeScript group(s): ${groups.map((g) => g.groupName).join(", ")}`
     );
+    const prNumber = github2.context.payload.pull_request?.number;
     const results = [];
     for (const group of groups) {
-      core7.startGroup(`Preview: ${group.groupName}${group.apiName ? ` (api: ${group.apiName})` : ""}`);
+      core7.startGroup(
+        `Preview: ${group.groupName}${group.apiName ? ` (api: ${group.apiName})` : ""}`
+      );
       try {
         const result = await runPreview({
           groupName: group.groupName,
           apiName: group.apiName,
           fernToken
         });
-        results.push({ ...result, groupName: group.groupName, sdkRepo: group.sdkRepo });
+        results.push({ ...result, sdkRepo: result.sdkRepo ?? group.sdkRepo });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         core7.warning(`Preview failed for group '${group.groupName}': ${message}`);
@@ -26921,6 +26885,7 @@ async function run() {
             sdkRepo: result.sdkRepo,
             outputPath: result.outputPath,
             previewId: result.previewId ?? "unknown",
+            prNumber,
             githubToken
           });
           result.diffUrl = diffUrl;
@@ -26931,7 +26896,6 @@ async function run() {
         core7.endGroup();
       }
     }
-    const prNumber = github2.context.payload.pull_request?.number;
     if (prNumber) {
       await postOrUpdateComment({ results, githubToken, prNumber });
     } else {
