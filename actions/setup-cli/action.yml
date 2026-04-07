@@ -12,9 +12,27 @@ inputs:
     required: false
     default: "latest"
 
+outputs:
+  run-id:
+    description: "The FERN_RUN_ID for this workflow run — inherited from the environment if already set, otherwise newly generated."
+    value: ${{ steps.run-id.outputs.run-id }}
+
 runs:
   using: composite
   steps:
+    - name: Set FERN_RUN_ID
+      id: run-id
+      shell: bash
+      run: |
+        if [ -z "${FERN_RUN_ID}" ]; then
+          FERN_RUN_ID=$(node -e "console.log(require('crypto').randomUUID())")
+          echo "FERN_RUN_ID=${FERN_RUN_ID}" >> "$GITHUB_ENV"
+          echo "Generated new FERN_RUN_ID: ${FERN_RUN_ID}"
+        else
+          echo "Inheriting existing FERN_RUN_ID: ${FERN_RUN_ID}"
+        fi
+        echo "run-id=${FERN_RUN_ID}" >> "$GITHUB_OUTPUT"
+
     - name: Install Fern CLI
       shell: bash
       env:
