@@ -6,12 +6,14 @@ vi.mock("@actions/core");
 
 describe("getOrCreateRunId", () => {
   beforeEach(() => {
-    process.env.FERN_RUN_ID = undefined;
+    // biome-ignore lint/performance/noDelete: process.env coerces to string, delete is required to unset
+    delete process.env.FERN_RUN_ID;
     vi.clearAllMocks();
   });
 
   afterEach(() => {
-    process.env.FERN_RUN_ID = undefined;
+    // biome-ignore lint/performance/noDelete: process.env coerces to string, delete is required to unset
+    delete process.env.FERN_RUN_ID;
   });
 
   it("generates a new UUIDv4 and exports it when FERN_RUN_ID is not set", () => {
@@ -33,7 +35,8 @@ describe("getOrCreateRunId", () => {
 
   it("returns a different ID on each call when env is not set", () => {
     const first = getOrCreateRunId();
-    process.env.FERN_RUN_ID = undefined;
+    // biome-ignore lint/performance/noDelete: process.env coerces to string, delete is required to unset
+    delete process.env.FERN_RUN_ID;
     const second = getOrCreateRunId();
 
     expect(first).not.toBe(second);
@@ -42,7 +45,8 @@ describe("getOrCreateRunId", () => {
 
 describe("getGithubRunId", () => {
   afterEach(() => {
-    process.env.GITHUB_RUN_ID = undefined;
+    // biome-ignore lint/performance/noDelete: process.env coerces to string, delete is required to unset
+    delete process.env.GITHUB_RUN_ID;
   });
 
   it("returns GITHUB_RUN_ID from environment", () => {
@@ -51,7 +55,8 @@ describe("getGithubRunId", () => {
   });
 
   it("returns empty string when GITHUB_RUN_ID is not set", () => {
-    process.env.GITHUB_RUN_ID = undefined;
+    // biome-ignore lint/performance/noDelete: process.env coerces to string, delete is required to unset
+    delete process.env.GITHUB_RUN_ID;
     expect(getGithubRunId()).toBe("");
   });
 });
