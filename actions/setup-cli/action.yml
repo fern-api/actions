@@ -1,13 +1,16 @@
 name: Setup Fern CLI
-description: Install and configure the Fern CLI in your GitHub Actions workflow
+description: "Install the Fern CLI in your GitHub Actions workflow. Requires Node.js and npm — add actions/setup-node before this step if your runner doesn't include them."
+author: "Fern"
+
 branding:
   icon: terminal
   color: green
 
 inputs:
   version:
-    description: Fern CLI version to install (e.g. "latest", "0.15.0")
-    default: latest
+    description: "Fern CLI version to install. Use 'latest' to always get the newest release, or pin to a specific version (e.g. '0.15.0') for reproducible builds."
+    required: false
+    default: "latest"
 
 runs:
   using: composite

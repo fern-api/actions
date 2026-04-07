@@ -1,31 +1,34 @@
-name: "Sync OpenAPI Files"
-description: "Sync OpenAPI specification files between repositories or update API from source using fern"
+name: "Sync OpenAPI"
+description: "Keep your Fern config up to date — pull OpenAPI specs from a URL or sync files between repositories and open a PR with the changes."
 author: "Fern"
+
 inputs:
-  repository:
-    description: "Target repository in owner/repo format (only used when update_from_source is false)"
-    required: false
   token:
-    description: "GitHub token with repo scope for repository access"
+    description: "GitHub token with contents: write and pull-requests: write on the target repository."
     required: true
+  update_from_source:
+    description: "Set to 'true' to run 'fern api update' and pull the latest spec from the URL configured in generators.yml. Use this for Case 1 (public URL). Set to 'false' to sync files between repositories (Case 2)."
+    required: false
+    default: "false"
+  repository:
+    description: "Target repository in 'owner/repo' format to sync files into. Only used when update_from_source is 'false'."
+    required: false
+  sources:
+    description: "YAML or JSON array of file/folder mappings to sync from this repo into the target repository. Each entry must have 'from' and 'to' fields (relative to repo roots), and an optional 'exclude' list of glob patterns. Only used when update_from_source is 'false'."
+    required: false
   branch:
-    description: "Branch name to create or update"
+    description: "Branch name to create or update in the target repository. Must be a stable name — do not use dynamic or timestamped names, or PR deduplication will break. Commits accumulate on this branch across runs."
     required: false
     default: "fern/sync-openapi"
-  sources:
-    description: "JSON or YAML array of mappings (from source to destination). Required when update_from_source is false."
-    required: false
   auto_merge:
-    description: "Whether to push directly to the branch or create a PR"
+    description: "Set to 'true' to push directly to the branch without opening a PR. Set to 'false' to open a PR from the branch onto main. You must use 'true' when branch is 'main'."
     required: false
     default: "false"
-  update_from_source:
-    description: "Whether to run \"fern api update\" on the current repository instead of syncing files"
-    required: false
-    default: "false"
+
 runs:
   using: "node20"
   main: "dist/index.js"
+
 branding:
   icon: "refresh-cw"
   color: "green"

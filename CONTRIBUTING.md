@@ -5,7 +5,7 @@
 ```
 fern-github-actions/
 ├── actions/
-│   ├── setup-fern-cli/     # Composite action — action.yml + README only
+│   ├── setup-cli/          # Composite action — action.yml + README only
 │   ├── sync-openapi/       # Node.js action — TypeScript, built to dist/
 │   └── example-action/     # Template — not released or mirrored
 ├── packages/
@@ -77,7 +77,7 @@ If the action will be published to its own standalone repo (see [Releasing](#rel
 
 ## Releasing
 
-Actions in this monorepo are mirrored to standalone repos on release so consumers can use the clean `uses: fern-api/sync-openapi@v4` syntax. The monorepo is the single source of truth; standalone repos are published mirrors.
+All actions in this monorepo are referenced directly from `fern-api/actions` — no mirroring to standalone repos.
 
 ### Tag format
 
@@ -85,7 +85,7 @@ Actions in this monorepo are mirrored to standalone repos on release so consumer
 <action-name>@<version>
 ```
 
-Examples: `sync-openapi@v4.1.0`, `setup-fern-cli@v1.2.0`
+Examples: `sync-openapi@v4.1.0`, `setup-cli@v1.2.0`
 
 Each action is versioned independently.
 
@@ -104,10 +104,9 @@ The [release workflow](.github/workflows/release.yml) then automatically:
 
 1. Parses the tag to identify the action and version.
 2. For Node.js actions: builds a fresh `dist/index.js`.
-3. Clones `fern-api/sync-openapi`, wipes it, and copies `action.yml` + `README.md` + `dist/`.
-4. Commits and pushes to `main` on the mirror repo.
-5. Creates version tag `v4.1.0` and moves alias tags `v4` and `v4.1` on the mirror.
-6. Creates a GitHub Release on the mirror with the same release notes.
+3. Builds `dist/index.js` for Node.js actions.
+4. Creates version tag and moves alias tags (`v4`, `v4.1`) on this repo.
+5. Creates a GitHub Release on this repo.
 
 ### Pre-release
 
@@ -125,14 +124,19 @@ The following secret must be set on this repository (Settings → Secrets and va
 
 | Secret | Description |
 |---|---|
-| `ACTIONS_MIRROR_TOKEN` | GitHub PAT with `contents: write` on all mirror repos. Use a classic PAT with `repo` scope, or a fine-grained PAT scoped to `fern-api/sync-openapi` and `fern-api/setup-fern-cli` with "Contents: Read and write". |
+| `ACTIONS_MIRROR_TOKEN` | GitHub PAT with `contents: write` on this repo for pushing version alias tags. |
 
 When adding a new mirrored action, grant `ACTIONS_MIRROR_TOKEN` write access to the new repo as well.
 
-## Action-to-mirror mapping
+## Action reference
 
-| Action | Mirror repo | Consumers use |
-|---|---|---|
-| `actions/sync-openapi` | `fern-api/sync-openapi` | `uses: fern-api/sync-openapi@v4` |
-| `actions/setup-fern-cli` | `fern-api/setup-fern-cli` | `uses: fern-api/setup-fern-cli@v1` |
-| `actions/example-action` | _(not mirrored — template only)_ | — |
+All actions are referenced directly from `fern-api/actions`:
+
+| Action | Consumers use |
+|---|---|
+| `actions/sync-openapi` | `uses: fern-api/actions/sync-openapi@v4` |
+| `actions/setup-cli` | `uses: fern-api/actions/setup-cli@v1` |
+| `actions/generate` | `uses: fern-api/actions/generate@v1` |
+| `actions/upgrade` | `uses: fern-api/actions/upgrade@v1` |
+| `actions/verify` | `uses: fern-api/actions/verify@v1` |
+| `actions/example-action` | _(template only — not released)_ |
