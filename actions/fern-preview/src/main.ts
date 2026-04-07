@@ -65,7 +65,7 @@ async function run(): Promise<void> {
           // generators.yml is PR-author controlled, so sdkRepo could point
           // anywhere. Restrict to same-owner repos by default.
           const repoOwner = result.sdkRepo.split("/")[0];
-          if (repoOwner !== sourceOwner) {
+          if (repoOwner.toLowerCase() !== sourceOwner.toLowerCase()) {
             core.warning(
               `Skipping diff push for '${result.groupName}': ` +
                 `SDK repo '${result.sdkRepo}' is not owned by '${sourceOwner}'`

@@ -66,10 +66,15 @@ export async function pushDiffBranch({
     // Create preview branch
     await gitExec(["-C", cloneDir, "checkout", "-b", branchName]);
 
-    // Overlay generated files onto the clone. We only overwrite files that
-    // the generator produces — non-generated files in the SDK repo (LICENSE,
-    // CONTRIBUTING.md, CHANGELOG.md, etc.) are left untouched. The .git
-    // directory is always excluded to avoid corrupting the clone.
+    // Clear all non-.git files so that deleted generated files appear in the
+    // diff. This mirrors Fern's push mode where the generator replaces all
+    // SDK content. Non-generated files (LICENSE, etc.) will show as deleted,
+    // which is accurate — they'd be re-created by the generator if configured.
+    for (const entry of fs.readdirSync(cloneDir)) {
+      if (entry !== ".git") {
+        fs.rmSync(path.join(cloneDir, entry), { recursive: true, force: true });
+      }
+    }
     fs.cpSync(outputPath, cloneDir, {
       recursive: true,
       filter: (src) => path.basename(src) !== ".git",

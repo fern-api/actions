@@ -3,6 +3,8 @@ import * as path from "node:path";
 import * as core from "@actions/core";
 import * as exec from "@actions/exec";
 
+const PREVIEW_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+
 export interface PreviewResult {
   status: "success" | "error";
   groupName: string;
@@ -52,18 +54,26 @@ export async function runPreview({
 
   let stdout = "";
   let stderr = "";
-  const exitCode = await exec.exec("fern", args, {
-    env: { ...process.env, FERN_TOKEN: fernToken },
-    listeners: {
-      stdout: (data: Buffer) => {
-        stdout += data.toString();
+  const exitCode = await withTimeout(
+    exec.exec("fern", args, {
+      env: {
+        ...process.env,
+        FERN_TOKEN: fernToken,
+        FERN_NO_VERSION_REDIRECTION: "true",
       },
-      stderr: (data: Buffer) => {
-        stderr += data.toString();
+      listeners: {
+        stdout: (data: Buffer) => {
+          stdout += data.toString();
+        },
+        stderr: (data: Buffer) => {
+          stderr += data.toString();
+        },
       },
-    },
-    ignoreReturnCode: true,
-  });
+      ignoreReturnCode: true,
+    }),
+    PREVIEW_TIMEOUT_MS,
+    `fern sdk preview timed out after ${PREVIEW_TIMEOUT_MS / 60000} minutes`
+  );
 
   // Parse JSON from stdout. The CLI writes a JSON object but may also emit
   // log lines before/after it. Try clean parse first, then fall back to
@@ -146,4 +156,20 @@ export function parseJsonFromOutput(
 
   core.warning(`Failed to parse preview output for group '${groupName}'`);
   return undefined;
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
 }

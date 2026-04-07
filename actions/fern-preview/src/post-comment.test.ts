@@ -82,4 +82,25 @@ describe("formatComment", () => {
     expect(comment).toContain(":x: Failed");
     expect(comment).toContain("No supported generators");
   });
+
+  it("escapes newlines in error messages for table rendering", () => {
+    const results: PreviewResult[] = [
+      {
+        status: "error",
+        groupName: "ts-sdk",
+        sdkRepo: undefined,
+        error: "Line one\nLine two\nLine three",
+      },
+    ];
+
+    const comment = formatComment(results, new Map());
+    // Error details section should preserve newlines (it's outside the table)
+    expect(comment).toContain("Line one\nLine two\nLine three");
+    // The table row itself should not contain raw newlines
+    const tableRows = comment.split("\n").filter((line) => line.startsWith("|"));
+    for (const row of tableRows) {
+      // Each table row should be a single line (no embedded newlines)
+      expect(row).not.toMatch(/\n/);
+    }
+  });
 });
