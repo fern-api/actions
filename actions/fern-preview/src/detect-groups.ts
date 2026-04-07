@@ -11,7 +11,7 @@ export interface DetectedGroup {
 
 const TS_GENERATOR_PATTERN = /^(fernapi\/)?fern-typescript-(node-sdk|browser-sdk|sdk)$/;
 
-export async function detectTypeScriptGroups(): Promise<DetectedGroup[]> {
+export function detectTypeScriptGroups(): DetectedGroup[] {
   const results: DetectedGroup[] = [];
   const fernDir = path.resolve("fern");
 
@@ -72,27 +72,27 @@ export async function detectTypeScriptGroups(): Promise<DetectedGroup[]> {
   return results;
 }
 
-// Max depth for recursive walk (fern/ → apis/<name>/ → generators.yml = 3 levels)
-const MAX_WALK_DEPTH = 5;
-
-function findGeneratorsYml(dir: string): string[] {
+function findGeneratorsYml(fernDir: string): string[] {
   const results: string[] = [];
 
-  function walk(currentDir: string, depth: number): void {
-    if (depth > MAX_WALK_DEPTH) {
-      return;
-    }
-    const entries = fs.readdirSync(currentDir, { withFileTypes: true });
-    for (const entry of entries) {
-      const fullPath = path.join(currentDir, entry.name);
-      if (entry.isDirectory() && entry.name !== "node_modules") {
-        walk(fullPath, depth + 1);
-      } else if (entry.isFile() && entry.name === "generators.yml") {
-        results.push(fullPath);
+  // Single-API layout: fern/generators.yml
+  const rootGenerators = path.join(fernDir, "generators.yml");
+  if (fs.existsSync(rootGenerators)) {
+    results.push(rootGenerators);
+  }
+
+  // Multi-API layout: fern/apis/<name>/generators.yml
+  const apisDir = path.join(fernDir, "apis");
+  if (fs.existsSync(apisDir)) {
+    for (const entry of fs.readdirSync(apisDir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        const apiGenerators = path.join(apisDir, entry.name, "generators.yml");
+        if (fs.existsSync(apiGenerators)) {
+          results.push(apiGenerators);
+        }
       }
     }
   }
 
-  walk(dir, 0);
   return results;
 }

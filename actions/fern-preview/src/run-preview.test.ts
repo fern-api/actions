@@ -44,6 +44,21 @@ Log line after`;
     expect(result).toEqual({ status: "success", previews: [] });
   });
 
+  it("handles JSON with braces inside string values", () => {
+    const stdout = `Log line
+{
+  "status": "success",
+  "message": "Processed {group: ts-sdk}",
+  "previews": []
+}`;
+    const result = parseJsonFromOutput(stdout, "test");
+    expect(result).toEqual({
+      status: "success",
+      message: "Processed {group: ts-sdk}",
+      previews: [],
+    });
+  });
+
   it("returns undefined for non-JSON output", () => {
     const result = parseJsonFromOutput("no json here", "test");
     expect(result).toBeUndefined();

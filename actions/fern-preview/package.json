@@ -24,5 +24,8 @@
   },
   "overrides": {
     "undici": "^6.23.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

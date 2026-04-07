@@ -6,17 +6,19 @@ const COMMENT_MARKER = "<!-- fern-sdk-preview -->";
 
 export async function postOrUpdateComment({
   results,
+  diffUrls,
   githubToken,
   prNumber,
 }: {
   results: PreviewResult[];
+  diffUrls: Map<string, string>;
   githubToken: string;
   prNumber: number;
 }): Promise<void> {
   const octokit = github.getOctokit(githubToken);
   const { owner, repo } = github.context.repo;
 
-  const body = formatComment(results);
+  const body = formatComment(results, diffUrls);
 
   // Paginate through all comments to find the marker
   const existing = await findExistingComment(octokit, owner, repo, prNumber);
@@ -64,7 +66,7 @@ function escapeTableCell(text: string): string {
   return text.replace(/\|/g, "\\|");
 }
 
-export function formatComment(results: PreviewResult[]): string {
+export function formatComment(results: PreviewResult[], diffUrls: Map<string, string>): string {
   let rows = "";
 
   for (const result of results) {
@@ -74,10 +76,11 @@ export function formatComment(results: PreviewResult[]): string {
     }
 
     const installCell = result.installCommand
-      ? `\`${escapeTableCell(result.installCommand)}\``
+      ? `<code>${escapeTableCell(result.installCommand)}</code>`
       : "—";
 
-    const diffCell = result.diffUrl ? `[View diff](${result.diffUrl})` : "No changes";
+    const diffUrl = diffUrls.get(result.groupName);
+    const diffCell = diffUrl ? `[View diff](${diffUrl})` : "No changes";
 
     rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(result.packageName ?? "—")} | ${installCell} | ${diffCell} |\n`;
   }

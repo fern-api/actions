@@ -12,11 +12,13 @@ describe("formatComment", () => {
         packageName: "@acme-preview/sdk",
         installCommand:
           "npm install @acme/sdk@npm:@acme-preview/sdk@0.0.1-main.123 --registry https://npm.buildwithfern.com",
-        diffUrl: "https://github.com/acme/ts-sdk/compare/main...fern-preview-pr-42",
       },
     ];
+    const diffUrls = new Map([
+      ["ts-sdk", "https://github.com/acme/ts-sdk/compare/main...fern-preview-pr-42"],
+    ]);
 
-    const comment = formatComment(results);
+    const comment = formatComment(results, diffUrls);
     expect(comment).toContain("<!-- fern-sdk-preview -->");
     expect(comment).toContain("## SDK Preview");
     expect(comment).toContain("@acme-preview/sdk");
@@ -34,7 +36,7 @@ describe("formatComment", () => {
       },
     ];
 
-    const comment = formatComment(results);
+    const comment = formatComment(results, new Map());
     expect(comment).toContain(":x: Failed");
     expect(comment).toContain("### Errors");
     expect(comment).toContain("Docker not found");
@@ -51,7 +53,7 @@ describe("formatComment", () => {
       },
     ];
 
-    const comment = formatComment(results);
+    const comment = formatComment(results, new Map());
     expect(comment).toContain("No changes");
   });
 
@@ -63,7 +65,6 @@ describe("formatComment", () => {
         sdkRepo: "acme/ts-sdk",
         packageName: "@acme-preview/sdk",
         installCommand: "npm install ...",
-        diffUrl: "https://github.com/acme/ts-sdk/compare/main...fern-preview-pr-1",
       },
       {
         status: "error",
@@ -72,8 +73,11 @@ describe("formatComment", () => {
         error: "No supported generators",
       },
     ];
+    const diffUrls = new Map([
+      ["ts-sdk", "https://github.com/acme/ts-sdk/compare/main...fern-preview-pr-1"],
+    ]);
 
-    const comment = formatComment(results);
+    const comment = formatComment(results, diffUrls);
     expect(comment).toContain("@acme-preview/sdk");
     expect(comment).toContain(":x: Failed");
     expect(comment).toContain("No supported generators");

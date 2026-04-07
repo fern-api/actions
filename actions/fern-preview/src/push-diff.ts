@@ -4,7 +4,7 @@ import * as path from "node:path";
 import * as core from "@actions/core";
 import * as exec from "@actions/exec";
 
-const REPO_PATTERN = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
+export const REPO_PATTERN = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
 
 export async function pushDiffBranch({
   sdkRepo,
@@ -72,8 +72,7 @@ export async function pushDiffBranch({
     // directory is always excluded to avoid corrupting the clone.
     fs.cpSync(outputPath, cloneDir, {
       recursive: true,
-      filter: (src) =>
-        !src.includes(`${path.sep}.git${path.sep}`) && !src.endsWith(`${path.sep}.git`),
+      filter: (src) => path.basename(src) !== ".git",
     });
 
     // Configure git for commit
@@ -106,6 +105,11 @@ export async function pushDiffBranch({
   }
 }
 
+/** Strips embedded credentials from error messages to prevent token leakage. */
+export function sanitizeTokenFromMessage(message: string): string {
+  return message.replace(/x-access-token:[^@]+@/g, "x-access-token:***@");
+}
+
 /**
  * Wrapper around exec.exec("git", ...) that sanitizes error messages to
  * prevent token leakage. If a git command fails, the Error may contain the
@@ -116,8 +120,7 @@ async function gitExec(args: string[], options?: exec.ExecOptions): Promise<numb
     return await exec.exec("git", args, options);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    // Strip anything that looks like a token from the error message
-    const sanitized = message.replace(/x-access-token:[^@]+@/g, "x-access-token:***@");
+    const sanitized = sanitizeTokenFromMessage(message);
     throw new Error(sanitized);
   }
 }

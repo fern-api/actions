@@ -13,7 +13,6 @@ export interface PreviewResult {
   version?: string;
   registryUrl?: string;
   outputPath?: string;
-  diffUrl?: string;
   error?: string;
 }
 
@@ -68,7 +67,7 @@ export async function runPreview({
 
   // Parse JSON from stdout. The CLI writes a JSON object but may also emit
   // log lines before/after it. Try clean parse first, then fall back to
-  // extracting the last balanced {...} block via brace counting.
+  // scanning lines from the end for the start of a JSON object.
   const parsed = parseJsonFromOutput(stdout, groupName);
 
   if (exitCode !== 0 || parsed?.status === "error" || !parsed) {
@@ -108,9 +107,10 @@ export async function runPreview({
 
 /**
  * Extracts a JSON object from stdout that may contain non-JSON log lines.
- * Tries JSON.parse(stdout) first (clean output), then falls back to finding
- * the last balanced {...} block by counting braces from the end. This handles
- * both pretty-printed and compact JSON.
+ * Tries JSON.parse(stdout) first (clean output), then falls back to scanning
+ * lines from the end looking for lines that start with '{' and trying to parse
+ * from there. This handles both pretty-printed and compact JSON, as well as
+ * braces inside string values.
  */
 export function parseJsonFromOutput(
   stdout: string,
@@ -123,27 +123,25 @@ export function parseJsonFromOutput(
     // Expected when log lines are mixed in
   }
 
-  // Fallback: find the last balanced JSON object by scanning backwards
-  try {
-    let depth = 0;
-    let endPos = -1;
-
-    for (let i = stdout.length - 1; i >= 0; i--) {
-      const char = stdout[i];
-      if (char === "}") {
-        if (depth === 0) {
-          endPos = i;
-        }
-        depth++;
-      } else if (char === "{") {
-        depth--;
-        if (depth === 0 && endPos !== -1) {
-          return JSON.parse(stdout.slice(i, endPos + 1)) as FernPreviewJson;
+  // Fallback: find lines that look like the start of a JSON object and try
+  // to parse from there to the end. The CLI writes the JSON object starting
+  // on its own line, so we scan backwards for lines beginning with '{'.
+  // We also scan backwards for the closing '}' to handle trailing log lines.
+  const lines = stdout.split("\n");
+  for (let i = lines.length - 1; i >= 0; i--) {
+    if (lines[i].trimStart().startsWith("{")) {
+      // Try parsing from this line to each '}' line, scanning from the end
+      for (let j = lines.length - 1; j >= i; j--) {
+        if (lines[j].trimEnd().endsWith("}")) {
+          try {
+            const candidate = lines.slice(i, j + 1).join("\n");
+            return JSON.parse(candidate) as FernPreviewJson;
+          } catch {
+            // Not valid JSON for this range — keep scanning
+          }
         }
       }
     }
-  } catch {
-    // Fall through to warning
   }
 
   core.warning(`Failed to parse preview output for group '${groupName}'`);

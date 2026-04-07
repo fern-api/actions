@@ -16,7 +16,7 @@ async function run(): Promise<void> {
     await installFernCli(fernVersion);
 
     // 2. Detect all TypeScript generator groups
-    const groups = await detectTypeScriptGroups();
+    const groups = detectTypeScriptGroups();
     if (groups.length === 0) {
       core.info("No TypeScript generator groups found. Skipping preview.");
       return;
@@ -59,6 +59,7 @@ async function run(): Promise<void> {
     // 4. Push diff branches for successful previews that have SDK repos.
     //    Only when running in a PR context — outside PRs there's no comment
     //    to attach the diff link to and no PR number for a unique branch name.
+    const diffUrls = new Map<string, string>();
     if (prNumber != null) {
       for (const result of results) {
         if (result.status === "success" && result.sdkRepo && result.outputPath) {
@@ -82,7 +83,9 @@ async function run(): Promise<void> {
               prNumber,
               githubToken,
             });
-            result.diffUrl = diffUrl;
+            if (diffUrl) {
+              diffUrls.set(result.groupName, diffUrl);
+            }
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             core.warning(`Failed to push diff for '${result.groupName}': ${message}`);
@@ -95,7 +98,7 @@ async function run(): Promise<void> {
     // 5. Post or update PR comment
     if (prNumber != null) {
       try {
-        await postOrUpdateComment({ results, githubToken, prNumber });
+        await postOrUpdateComment({ results, diffUrls, githubToken, prNumber });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         core.warning(`Failed to post PR comment: ${message}`);
@@ -108,6 +111,9 @@ async function run(): Promise<void> {
         }
       }
     }
+
+    // 6. Set action outputs
+    core.setOutput("results", JSON.stringify(results));
   } catch (error) {
     if (error instanceof Error) {
       core.setFailed(error.message);

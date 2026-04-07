@@ -30,7 +30,7 @@ afterEach(() => {
 });
 
 describe("detectTypeScriptGroups", () => {
-  it("detects ts-sdk group from single generators.yml", async () => {
+  it("detects ts-sdk group from single generators.yml", () => {
     writeGeneratorsYml(
       "generators.yml",
       `
@@ -45,11 +45,11 @@ groups:
 `
     );
 
-    const groups = await detectTypeScriptGroups();
+    const groups = detectTypeScriptGroups();
     expect(groups).toEqual([{ groupName: "ts-sdk", apiName: undefined, sdkRepo: "acme/ts-sdk" }]);
   });
 
-  it("detects groups from multi-api layout", async () => {
+  it("detects groups from multi-api layout", () => {
     writeGeneratorsYml(
       "apis/bar/generators.yml",
       `
@@ -63,11 +63,11 @@ groups:
 `
     );
 
-    const groups = await detectTypeScriptGroups();
+    const groups = detectTypeScriptGroups();
     expect(groups).toEqual([{ groupName: "ts-sdk", apiName: "bar", sdkRepo: "acme/bar-ts-sdk" }]);
   });
 
-  it("skips non-TypeScript generators", async () => {
+  it("skips non-TypeScript generators", () => {
     writeGeneratorsYml(
       "generators.yml",
       `
@@ -79,16 +79,16 @@ groups:
 `
     );
 
-    const groups = await detectTypeScriptGroups();
+    const groups = detectTypeScriptGroups();
     expect(groups).toEqual([]);
   });
 
-  it("returns empty array when no fern/ directory exists", async () => {
-    const groups = await detectTypeScriptGroups();
+  it("returns empty array when no fern/ directory exists", () => {
+    const groups = detectTypeScriptGroups();
     expect(groups).toEqual([]);
   });
 
-  it("handles generators without github config", async () => {
+  it("handles generators without github config", () => {
     writeGeneratorsYml(
       "generators.yml",
       `
@@ -103,18 +103,18 @@ groups:
 `
     );
 
-    const groups = await detectTypeScriptGroups();
+    const groups = detectTypeScriptGroups();
     expect(groups).toEqual([{ groupName: "internal", apiName: undefined, sdkRepo: undefined }]);
   });
 
-  it("handles malformed YAML gracefully", async () => {
+  it("handles malformed YAML gracefully", () => {
     writeGeneratorsYml("generators.yml", "{ invalid yaml: [unterminated");
 
-    const groups = await detectTypeScriptGroups();
+    const groups = detectTypeScriptGroups();
     expect(groups).toEqual([]);
   });
 
-  it("matches all supported TypeScript generator names", async () => {
+  it("matches all supported TypeScript generator names", () => {
     writeGeneratorsYml(
       "generators.yml",
       `
@@ -134,7 +134,7 @@ groups:
 `
     );
 
-    const groups = await detectTypeScriptGroups();
+    const groups = detectTypeScriptGroups();
     expect(groups).toHaveLength(3);
     expect(groups.map((g) => g.groupName)).toEqual(["node", "browser", "unified"]);
   });

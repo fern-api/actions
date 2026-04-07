@@ -13,6 +13,9 @@ inputs:
     description: "Fern CLI version to install (e.g. 'latest', '3.98.5')"
     required: false
     default: "latest"
+outputs:
+  results:
+    description: "JSON array of preview results (status, groupName, packageName, installCommand, version)"
 runs:
   using: "node20"
   main: "dist/index.js"
