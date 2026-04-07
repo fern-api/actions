@@ -1,0 +1,22 @@
+name: "upgrade"
+description: "[ALPHA] Upgrades Fern CLI and generator versions and opens or updates a shared upgrade PR"
+author: "Fern"
+
+inputs:
+  fern-token:
+    description: "Fern token for API access and PR creation"
+    required: true
+
+outputs:
+  run-id:
+    description: "UUIDv4 for this upgrade run"
+  pr-url:
+    description: "URL of the created or updated upgrade PR (empty if no changes)"
+  cli-upgraded:
+    description: "Whether the Fern CLI version was upgraded"
+  generators-upgraded:
+    description: "JSON array of {generator, from, to} for each upgraded generator"
+
+runs:
+  using: "node20"
+  main: "dist/index.js"

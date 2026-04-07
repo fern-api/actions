@@ -46,6 +46,31 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@20.19.35)
 
+  actions/generate:
+    dependencies:
+      '@actions/core':
+        specifier: ^1.10.0
+        version: 1.11.1
+      '@actions/github':
+        specifier: ^6.0.0
+        version: 6.0.1
+      '@fern-github-actions/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.35
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.8)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.35)
+
   actions/sync-openapi:
     dependencies:
       '@actions/core':
@@ -73,6 +98,56 @@ importers:
       '@types/js-yaml':
         specifier: ^4.0.5
         version: 4.0.9
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.35
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.8)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.35)
+
+  actions/upgrade:
+    dependencies:
+      '@actions/core':
+        specifier: ^1.10.0
+        version: 1.11.1
+      '@actions/github':
+        specifier: ^6.0.0
+        version: 6.0.1
+      '@fern-github-actions/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.35
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.8)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.35)
+
+  actions/verify:
+    dependencies:
+      '@actions/core':
+        specifier: ^1.10.0
+        version: 1.11.1
+      '@actions/github':
+        specifier: ^6.0.0
+        version: 6.0.1
+      '@fern-github-actions/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+    devDependencies:
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.35

@@ -13,7 +13,7 @@
 
 [![GitHub Marketplace](https://img.shields.io/badge/GitHub%20Marketplace-Sync%20OpenAPI-blue?logo=github)](https://github.com/marketplace/actions/sync-openapi-files)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
-[![Documentation](https://img.shields.io/badge/Read%20our%20Documentation-black?logo=book)](https://buildwithfern.com/learn/api-definitions/openapi/sync-your-open-api-specification?utm_source=fern-api/sync-openapi/readme-read-our-documentation)
+[![Documentation](https://img.shields.io/badge/Read%20our%20Documentation-black?logo=book)](https://buildwithfern.com/learn/api-definitions/openapi/sync-your-open-api-specification?utm_source=fern-api/actions/sync-openapi/readme-read-our-documentation)
 
 </div>
 
@@ -49,7 +49,7 @@ jobs:
         with:
           token: ${{ secrets.OPENAPI_SYNC_TOKEN }}
       - name: Update API with Fern
-        uses: fern-api/sync-openapi@v4
+        uses: fern-api/actions/sync-openapi@v4
         with:
           update_from_source: true
           token: ${{ secrets.OPENAPI_SYNC_TOKEN }}
@@ -82,7 +82,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Sync OpenAPI spec to target repo
-        uses: fern-api/sync-openapi@v4
+        uses: fern-api/actions/sync-openapi@v4
         with:
           repository: <your-org>/<your-target-repo>
           token: ${{ secrets.<PAT_TOKEN_NAME> }}
@@ -130,7 +130,7 @@ The GitHub token used for this action must have:
 
 ## Releasing
 
-Tag the commit and publish a GitHub Release from the [fern-api/fern-github-actions](https://github.com/fern-api/fern-github-actions) monorepo:
+Tag the commit and publish a GitHub Release from the [fern-api/actions](https://github.com/fern-api/actions) monorepo:
 
 ```sh
 git tag sync-openapi@v4.0.1
@@ -138,7 +138,7 @@ git push origin sync-openapi@v4.0.1
 gh release create sync-openapi@v4.0.1 --generate-notes
 ```
 
-The release workflow automatically mirrors this action to [fern-api/sync-openapi](https://github.com/fern-api/sync-openapi) and moves the major and minor version tags (e.g. `v4` and `v4.0`) so users pinned to `@v4` or `@v4.0` get the update immediately.
+The release workflow moves the major and minor version tags (e.g. `v4` and `v4.0`) so users pinned to `@v4` or `@v4.0` get the update immediately.
 
 ---
 
