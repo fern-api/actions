@@ -1,5 +1,5 @@
 import * as core from "@actions/core";
-import { getRequiredInput, runAction } from "@fern-github-actions/shared";
+import { getOrCreateRunId, getRequiredInput, runAction } from "@fern-github-actions/shared";
 
 interface ActionInputs {
   fernToken: string;
@@ -12,9 +12,8 @@ function parseInputs(): ActionInputs {
 }
 
 async function run(_inputs: ActionInputs): Promise<void> {
-  const runId = crypto.randomUUID();
+  const runId = getOrCreateRunId();
   core.setOutput("run-id", runId);
-  core.exportVariable("FERN_RUN_ID", runId);
   core.info(`Starting fern-upgrade run ${runId}`);
 
   // TODO: T021 — run fern upgrade (CLI bump)

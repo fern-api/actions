@@ -1,5 +1,10 @@
 import * as core from "@actions/core";
-import { getOptionalInput, getRequiredInput, runAction } from "@fern-github-actions/shared";
+import {
+  getOptionalInput,
+  getOrCreateRunId,
+  getRequiredInput,
+  runAction,
+} from "@fern-github-actions/shared";
 
 interface ActionInputs {
   fernToken: string;
@@ -14,10 +19,9 @@ function parseInputs(): ActionInputs {
 }
 
 async function run(_inputs: ActionInputs): Promise<void> {
-  const runId = crypto.randomUUID();
+  const runId = getOrCreateRunId();
   core.setOutput("run-id", runId);
-  core.exportVariable("FERN_RUN_ID", runId);
-  core.info(`Starting fern-preview run ${runId}`);
+  core.info(`Starting fern-verify run ${runId}`);
 
   // TODO: T027 — run fern generate --preview
   // TODO: T027 — run self-verification per generator

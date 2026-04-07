@@ -1,4 +1,5 @@
 export * from "./types.js";
+export * from "./run-id.js";
 
 import * as core from "@actions/core";
 import type { Repository } from "./types.js";
