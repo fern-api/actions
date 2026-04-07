@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import { detectTypeScriptGroups } from "./detect-groups.js";
+import { detectPreviewGroups } from "./detect-groups.js";
 import { installFernCli } from "./install-fern.js";
 import { postOrUpdateComment } from "./post-comment.js";
 import { pushDiffBranch } from "./push-diff.js";
@@ -15,15 +15,13 @@ async function run(): Promise<void> {
     // 1. Install Fern CLI
     await installFernCli(fernVersion);
 
-    // 2. Detect all TypeScript generator groups
-    const groups = detectTypeScriptGroups();
+    // 2. Detect generator groups eligible for preview
+    const groups = detectPreviewGroups({ generators: "typescript" });
     if (groups.length === 0) {
-      core.info("No TypeScript generator groups found. Skipping preview.");
+      core.info("No eligible generator groups found. Skipping preview.");
       return;
     }
-    core.info(
-      `Found ${groups.length} TypeScript group(s): ${groups.map((g) => g.groupName).join(", ")}`
-    );
+    core.info(`Found ${groups.length} group(s): ${groups.map((g) => g.groupName).join(", ")}`);
 
     // Resolve PR number early — used for branch naming and comment posting
     const prNumber = github.context.payload.pull_request?.number;

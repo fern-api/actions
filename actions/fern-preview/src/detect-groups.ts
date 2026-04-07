@@ -9,10 +9,22 @@ export interface DetectedGroup {
   sdkRepo: string | undefined;
 }
 
-const TS_GENERATOR_PATTERN = /^(fernapi\/)?fern-typescript-(node-sdk|browser-sdk|sdk)$/;
+const GENERATOR_PATTERNS: Record<string, RegExp> = {
+  typescript: /^(fernapi\/)?fern-typescript-(node-sdk|browser-sdk|sdk)$/,
+  // Future languages:
+  // python: /^(fernapi\/)?fern-python-sdk$/,
+  // java: /^(fernapi\/)?fern-java-sdk$/,
+  // go: /^(fernapi\/)?fern-go-sdk$/,
+};
 
-export function detectTypeScriptGroups(): DetectedGroup[] {
+export function detectPreviewGroups({
+  generators = "typescript",
+}: {
+  generators?: keyof typeof GENERATOR_PATTERNS | "all";
+} = {}): DetectedGroup[] {
   const results: DetectedGroup[] = [];
+  const patterns =
+    generators === "all" ? Object.values(GENERATOR_PATTERNS) : [GENERATOR_PATTERNS[generators]];
   const fernDir = path.resolve("fern");
 
   if (!fs.existsSync(fernDir)) {
@@ -56,14 +68,14 @@ export function detectTypeScriptGroups(): DetectedGroup[] {
 
       for (const gen of generators) {
         const name = gen.name as string;
-        if (TS_GENERATOR_PATTERN.test(name)) {
+        if (patterns.some((p) => p?.test(name))) {
           const githubConfig = gen.github as Record<string, string> | undefined;
           results.push({
             groupName,
             apiName,
             sdkRepo: githubConfig?.repository,
           });
-          break; // One TS match per group is enough
+          break; // One match per group is enough
         }
       }
     }

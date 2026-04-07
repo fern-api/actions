@@ -9,7 +9,7 @@ vi.mock("@actions/core", () => ({
   warning: vi.fn(),
 }));
 
-import { detectTypeScriptGroups } from "./detect-groups.js";
+import { detectPreviewGroups } from "./detect-groups.js";
 
 let tmpDir: string;
 
@@ -29,7 +29,7 @@ afterEach(() => {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
-describe("detectTypeScriptGroups", () => {
+describe("detectPreviewGroups", () => {
   it("detects ts-sdk group from single generators.yml", () => {
     writeGeneratorsYml(
       "generators.yml",
@@ -45,7 +45,7 @@ groups:
 `
     );
 
-    const groups = detectTypeScriptGroups();
+    const groups = detectPreviewGroups();
     expect(groups).toEqual([{ groupName: "ts-sdk", apiName: undefined, sdkRepo: "acme/ts-sdk" }]);
   });
 
@@ -63,7 +63,7 @@ groups:
 `
     );
 
-    const groups = detectTypeScriptGroups();
+    const groups = detectPreviewGroups();
     expect(groups).toEqual([{ groupName: "ts-sdk", apiName: "bar", sdkRepo: "acme/bar-ts-sdk" }]);
   });
 
@@ -79,12 +79,12 @@ groups:
 `
     );
 
-    const groups = detectTypeScriptGroups();
+    const groups = detectPreviewGroups();
     expect(groups).toEqual([]);
   });
 
   it("returns empty array when no fern/ directory exists", () => {
-    const groups = detectTypeScriptGroups();
+    const groups = detectPreviewGroups();
     expect(groups).toEqual([]);
   });
 
@@ -103,14 +103,14 @@ groups:
 `
     );
 
-    const groups = detectTypeScriptGroups();
+    const groups = detectPreviewGroups();
     expect(groups).toEqual([{ groupName: "internal", apiName: undefined, sdkRepo: undefined }]);
   });
 
   it("handles malformed YAML gracefully", () => {
     writeGeneratorsYml("generators.yml", "{ invalid yaml: [unterminated");
 
-    const groups = detectTypeScriptGroups();
+    const groups = detectPreviewGroups();
     expect(groups).toEqual([]);
   });
 
@@ -134,8 +134,29 @@ groups:
 `
     );
 
-    const groups = detectTypeScriptGroups();
+    const groups = detectPreviewGroups();
     expect(groups).toHaveLength(3);
     expect(groups.map((g) => g.groupName)).toEqual(["node", "browser", "unified"]);
+  });
+
+  it("returns all supported generators when filter is 'all'", () => {
+    writeGeneratorsYml(
+      "generators.yml",
+      `
+groups:
+  node:
+    generators:
+      - name: fern-typescript-node-sdk
+        version: "1.0.0"
+  browser:
+    generators:
+      - name: fernapi/fern-typescript-browser-sdk
+        version: "1.0.0"
+`
+    );
+
+    const groups = detectPreviewGroups({ generators: "all" });
+    expect(groups).toHaveLength(2);
+    expect(groups.map((g) => g.groupName)).toEqual(["node", "browser"]);
   });
 });
