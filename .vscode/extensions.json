@@ -1,3 +1,4 @@
 {
-  "recommendations": ["redhat.vscode-yaml"]
+  "recommendations": ["redhat.vscode-yaml"],
+  "unwantedRecommendations": ["github.vscode-github-actions"]
 }
