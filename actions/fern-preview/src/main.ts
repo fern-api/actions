@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { detectPreviewGroups } from "./detect-groups.js";
+import { getGithubInstallationToken } from "./fern-api.js";
 import { installFernCli } from "./install-fern.js";
 import { postOrUpdateComment } from "./post-comment.js";
 import { pushDiffBranch } from "./push-diff.js";
@@ -9,7 +10,6 @@ import { type PreviewResult, runPreview } from "./run-preview.js";
 async function run(): Promise<void> {
   try {
     const fernToken = core.getInput("fern-token", { required: true });
-    const githubToken = core.getInput("github-token");
     const fernVersion = core.getInput("fern-version") || "latest";
 
     // 1. Install Fern CLI
@@ -75,11 +75,21 @@ async function run(): Promise<void> {
 
           core.startGroup(`SDK diff: ${result.groupName} → ${result.sdkRepo}`);
           try {
+            // Request a GitHub installation token from the Fern backend.
+            // This uses the Fern GitHub App (same as `fern generate`) so
+            // users don't need to provide a cross-repo GitHub token.
+            const [repoOwner, repoName] = result.sdkRepo.split("/");
+            const installationToken = await getGithubInstallationToken({
+              owner: repoOwner,
+              repo: repoName,
+              fernToken,
+            });
+
             const diffUrl = await pushDiffBranch({
               sdkRepo: result.sdkRepo,
               outputPath: result.outputPath,
               prNumber,
-              githubToken,
+              githubToken: installationToken,
             });
             if (diffUrl) {
               diffUrls.set(result.groupName, diffUrl);
@@ -96,7 +106,7 @@ async function run(): Promise<void> {
     // 5. Post or update PR comment
     if (prNumber != null) {
       try {
-        await postOrUpdateComment({ results, diffUrls, githubToken, prNumber });
+        await postOrUpdateComment({ results, diffUrls, prNumber });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         core.warning(`Failed to post PR comment: ${message}`);

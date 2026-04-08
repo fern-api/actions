@@ -7,15 +7,23 @@ const COMMENT_MARKER = "<!-- fern-sdk-preview -->";
 export async function postOrUpdateComment({
   results,
   diffUrls,
-  githubToken,
   prNumber,
 }: {
   results: PreviewResult[];
   diffUrls: Map<string, string>;
-  githubToken: string;
   prNumber: number;
 }): Promise<void> {
-  const octokit = github.getOctokit(githubToken);
+  // Use the default GITHUB_TOKEN for posting comments to the current repo.
+  // This token is automatically available in GitHub Actions and has write
+  // access to the repo where the workflow runs — no cross-repo token needed.
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) {
+    throw new Error(
+      "GITHUB_TOKEN environment variable is not set. " +
+        "Ensure the workflow has `permissions: pull-requests: write` or passes GITHUB_TOKEN."
+    );
+  }
+  const octokit = github.getOctokit(token);
   const { owner, repo } = github.context.repo;
 
   const body = formatComment(results, diffUrls);

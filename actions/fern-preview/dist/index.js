@@ -98,11 +98,11 @@ var require_command = __commonJS({
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.issue = exports2.issueCommand = void 0;
-    var os3 = __importStar(require("os"));
+    var os2 = __importStar(require("os"));
     var utils_1 = require_utils();
     function issueCommand(command, properties, message) {
       const cmd = new Command(command, properties, message);
-      process.stdout.write(cmd.toString() + os3.EOL);
+      process.stdout.write(cmd.toString() + os2.EOL);
     }
     exports2.issueCommand = issueCommand;
     function issue(name, message = "") {
@@ -186,7 +186,7 @@ var require_file_command = __commonJS({
     exports2.prepareKeyValueMessage = exports2.issueFileCommand = void 0;
     var crypto = __importStar(require("crypto"));
     var fs3 = __importStar(require("fs"));
-    var os3 = __importStar(require("os"));
+    var os2 = __importStar(require("os"));
     var utils_1 = require_utils();
     function issueFileCommand(command, message) {
       const filePath = process.env[`GITHUB_${command}`];
@@ -196,7 +196,7 @@ var require_file_command = __commonJS({
       if (!fs3.existsSync(filePath)) {
         throw new Error(`Missing file at path: ${filePath}`);
       }
-      fs3.appendFileSync(filePath, `${(0, utils_1.toCommandValue)(message)}${os3.EOL}`, {
+      fs3.appendFileSync(filePath, `${(0, utils_1.toCommandValue)(message)}${os2.EOL}`, {
         encoding: "utf8"
       });
     }
@@ -210,7 +210,7 @@ var require_file_command = __commonJS({
       if (convertedValue.includes(delimiter)) {
         throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
       }
-      return `${key}<<${delimiter}${os3.EOL}${convertedValue}${os3.EOL}${delimiter}`;
+      return `${key}<<${delimiter}${os2.EOL}${convertedValue}${os2.EOL}${delimiter}`;
     }
     exports2.prepareKeyValueMessage = prepareKeyValueMessage;
   }
@@ -1001,14 +1001,14 @@ var require_util = __commonJS({
         }
         const port = url.port != null ? url.port : url.protocol === "https:" ? 443 : 80;
         let origin = url.origin != null ? url.origin : `${url.protocol}//${url.hostname}:${port}`;
-        let path4 = url.path != null ? url.path : `${url.pathname || ""}${url.search || ""}`;
+        let path3 = url.path != null ? url.path : `${url.pathname || ""}${url.search || ""}`;
         if (origin.endsWith("/")) {
           origin = origin.substring(0, origin.length - 1);
         }
-        if (path4 && !path4.startsWith("/")) {
-          path4 = `/${path4}`;
+        if (path3 && !path3.startsWith("/")) {
+          path3 = `/${path3}`;
         }
-        url = new URL(origin + path4);
+        url = new URL(origin + path3);
       }
       return url;
     }
@@ -2622,20 +2622,20 @@ var require_parseParams = __commonJS({
 var require_basename = __commonJS({
   "../../node_modules/.pnpm/@fastify+busboy@2.1.1/node_modules/@fastify/busboy/lib/utils/basename.js"(exports2, module2) {
     "use strict";
-    module2.exports = function basename(path4) {
-      if (typeof path4 !== "string") {
+    module2.exports = function basename2(path3) {
+      if (typeof path3 !== "string") {
         return "";
       }
-      for (var i = path4.length - 1; i >= 0; --i) {
-        switch (path4.charCodeAt(i)) {
+      for (var i = path3.length - 1; i >= 0; --i) {
+        switch (path3.charCodeAt(i)) {
           case 47:
           // '/'
           case 92:
-            path4 = path4.slice(i + 1);
-            return path4 === ".." || path4 === "." ? "" : path4;
+            path3 = path3.slice(i + 1);
+            return path3 === ".." || path3 === "." ? "" : path3;
         }
       }
-      return path4 === ".." || path4 === "." ? "" : path4;
+      return path3 === ".." || path3 === "." ? "" : path3;
     };
   }
 });
@@ -2649,7 +2649,7 @@ var require_multipart = __commonJS({
     var Dicer = require_Dicer();
     var parseParams = require_parseParams();
     var decodeText = require_decodeText();
-    var basename = require_basename();
+    var basename2 = require_basename();
     var getLimit = require_getLimit();
     var RE_BOUNDARY = /^boundary$/i;
     var RE_FIELD = /^form-data$/i;
@@ -2766,7 +2766,7 @@ var require_multipart = __commonJS({
               } else if (RE_FILENAME.test(parsed[i][0])) {
                 filename = parsed[i][1];
                 if (!preservePath) {
-                  filename = basename(filename);
+                  filename = basename2(filename);
                 }
               }
             }
@@ -5666,7 +5666,7 @@ var require_request = __commonJS({
     }
     var Request = class _Request {
       constructor(origin, {
-        path: path4,
+        path: path3,
         method,
         body,
         headers,
@@ -5680,11 +5680,11 @@ var require_request = __commonJS({
         throwOnError,
         expectContinue
       }, handler2) {
-        if (typeof path4 !== "string") {
+        if (typeof path3 !== "string") {
           throw new InvalidArgumentError("path must be a string");
-        } else if (path4[0] !== "/" && !(path4.startsWith("http://") || path4.startsWith("https://")) && method !== "CONNECT") {
+        } else if (path3[0] !== "/" && !(path3.startsWith("http://") || path3.startsWith("https://")) && method !== "CONNECT") {
           throw new InvalidArgumentError("path must be an absolute URL or start with a slash");
-        } else if (invalidPathRegex.exec(path4) !== null) {
+        } else if (invalidPathRegex.exec(path3) !== null) {
           throw new InvalidArgumentError("invalid request path");
         }
         if (typeof method !== "string") {
@@ -5747,7 +5747,7 @@ var require_request = __commonJS({
         this.completed = false;
         this.aborted = false;
         this.upgrade = upgrade || null;
-        this.path = query ? util.buildURL(path4, query) : path4;
+        this.path = query ? util.buildURL(path3, query) : path3;
         this.origin = origin;
         this.idempotent = idempotent == null ? method === "HEAD" || method === "GET" : idempotent;
         this.blocking = blocking == null ? false : blocking;
@@ -6755,9 +6755,9 @@ var require_RedirectHandler = __commonJS({
           return this.handler.onHeaders(statusCode, headers, resume, statusText);
         }
         const { origin, pathname, search } = util.parseURL(new URL(this.location, this.opts.origin && new URL(this.opts.path, this.opts.origin)));
-        const path4 = search ? `${pathname}${search}` : pathname;
+        const path3 = search ? `${pathname}${search}` : pathname;
         this.opts.headers = cleanRequestHeaders(this.opts.headers, statusCode === 303, this.opts.origin !== origin);
-        this.opts.path = path4;
+        this.opts.path = path3;
         this.opts.origin = origin;
         this.opts.maxRedirections = 0;
         this.opts.query = null;
@@ -7999,7 +7999,7 @@ var require_client = __commonJS({
         writeH2(client, client[kHTTP2Session], request2);
         return;
       }
-      const { body, method, path: path4, host, upgrade, headers, blocking, reset } = request2;
+      const { body, method, path: path3, host, upgrade, headers, blocking, reset } = request2;
       const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH";
       if (body && typeof body.read === "function") {
         body.read(0);
@@ -8049,7 +8049,7 @@ var require_client = __commonJS({
       if (blocking) {
         socket[kBlocking] = true;
       }
-      let header = `${method} ${path4} HTTP/1.1\r
+      let header = `${method} ${path3} HTTP/1.1\r
 `;
       if (typeof host === "string") {
         header += `host: ${host}\r
@@ -8112,7 +8112,7 @@ upgrade: ${upgrade}\r
       return true;
     }
     function writeH2(client, session, request2) {
-      const { body, method, path: path4, host, upgrade, expectContinue, signal, headers: reqHeaders } = request2;
+      const { body, method, path: path3, host, upgrade, expectContinue, signal, headers: reqHeaders } = request2;
       let headers;
       if (typeof reqHeaders === "string") headers = Request[kHTTP2CopyHeaders](reqHeaders.trim());
       else headers = reqHeaders;
@@ -8155,7 +8155,7 @@ upgrade: ${upgrade}\r
         });
         return true;
       }
-      headers[HTTP2_HEADER_PATH] = path4;
+      headers[HTTP2_HEADER_PATH] = path3;
       headers[HTTP2_HEADER_SCHEME] = "https";
       const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH";
       if (body && typeof body.read === "function") {
@@ -10398,20 +10398,20 @@ var require_mock_utils = __commonJS({
       }
       return true;
     }
-    function safeUrl(path4) {
-      if (typeof path4 !== "string") {
-        return path4;
+    function safeUrl(path3) {
+      if (typeof path3 !== "string") {
+        return path3;
       }
-      const pathSegments = path4.split("?");
+      const pathSegments = path3.split("?");
       if (pathSegments.length !== 2) {
-        return path4;
+        return path3;
       }
       const qp = new URLSearchParams(pathSegments.pop());
       qp.sort();
       return [...pathSegments, qp.toString()].join("?");
     }
-    function matchKey(mockDispatch2, { path: path4, method, body, headers }) {
-      const pathMatch = matchValue(mockDispatch2.path, path4);
+    function matchKey(mockDispatch2, { path: path3, method, body, headers }) {
+      const pathMatch = matchValue(mockDispatch2.path, path3);
       const methodMatch = matchValue(mockDispatch2.method, method);
       const bodyMatch = typeof mockDispatch2.body !== "undefined" ? matchValue(mockDispatch2.body, body) : true;
       const headersMatch = matchHeaders(mockDispatch2, headers);
@@ -10429,7 +10429,7 @@ var require_mock_utils = __commonJS({
     function getMockDispatch(mockDispatches, key) {
       const basePath = key.query ? buildURL(key.path, key.query) : key.path;
       const resolvedPath = typeof basePath === "string" ? safeUrl(basePath) : basePath;
-      let matchedMockDispatches = mockDispatches.filter(({ consumed }) => !consumed).filter(({ path: path4 }) => matchValue(safeUrl(path4), resolvedPath));
+      let matchedMockDispatches = mockDispatches.filter(({ consumed }) => !consumed).filter(({ path: path3 }) => matchValue(safeUrl(path3), resolvedPath));
       if (matchedMockDispatches.length === 0) {
         throw new MockNotMatchedError(`Mock dispatch not matched for path '${resolvedPath}'`);
       }
@@ -10466,9 +10466,9 @@ var require_mock_utils = __commonJS({
       }
     }
     function buildKey(opts) {
-      const { path: path4, method, body, headers, query } = opts;
+      const { path: path3, method, body, headers, query } = opts;
       return {
-        path: path4,
+        path: path3,
         method,
         body,
         headers,
@@ -10917,10 +10917,10 @@ var require_pending_interceptors_formatter = __commonJS({
       }
       format(pendingInterceptors) {
         const withPrettyHeaders = pendingInterceptors.map(
-          ({ method, path: path4, data: { statusCode }, persist, times, timesInvoked, origin }) => ({
+          ({ method, path: path3, data: { statusCode }, persist, times, timesInvoked, origin }) => ({
             Method: method,
             Origin: origin,
-            Path: path4,
+            Path: path3,
             "Status code": statusCode,
             Persistent: persist ? "\u2705" : "\u274C",
             Invocations: timesInvoked,
@@ -13063,7 +13063,7 @@ var require_fetch = __commonJS({
         this.emit("terminated", error);
       }
     };
-    function fetch(input, init = {}) {
+    function fetch2(input, init = {}) {
       webidl.argumentLengthCheck(arguments, 1, { header: "globalThis.fetch" });
       const p = createDeferredPromise();
       let requestObject;
@@ -13993,7 +13993,7 @@ var require_fetch = __commonJS({
       }
     }
     module2.exports = {
-      fetch,
+      fetch: fetch2,
       Fetch,
       fetching,
       finalizeAndReportTiming
@@ -15541,8 +15541,8 @@ var require_util6 = __commonJS({
         }
       }
     }
-    function validateCookiePath(path4) {
-      for (const char of path4) {
+    function validateCookiePath(path3) {
+      for (const char of path3) {
         const code = char.charCodeAt(0);
         if (code < 33 || char === ";") {
           throw new Error("Invalid cookie path");
@@ -17222,11 +17222,11 @@ var require_undici = __commonJS({
           if (typeof opts.path !== "string") {
             throw new InvalidArgumentError("invalid opts.path");
           }
-          let path4 = opts.path;
+          let path3 = opts.path;
           if (!opts.path.startsWith("/")) {
-            path4 = `/${path4}`;
+            path3 = `/${path3}`;
           }
-          url = new URL(util.parseOrigin(url).origin + path4);
+          url = new URL(util.parseOrigin(url).origin + path3);
         } else {
           if (!opts) {
             opts = typeof url === "object" ? url : {};
@@ -17249,7 +17249,7 @@ var require_undici = __commonJS({
     module2.exports.getGlobalDispatcher = getGlobalDispatcher;
     if (util.nodeMajor > 16 || util.nodeMajor === 16 && util.nodeMinor >= 8) {
       let fetchImpl = null;
-      module2.exports.fetch = async function fetch(resource) {
+      module2.exports.fetch = async function fetch2(resource) {
         if (!fetchImpl) {
           fetchImpl = require_fetch().fetch;
         }
@@ -18449,7 +18449,7 @@ var require_path_utils = __commonJS({
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.toPlatformPath = exports2.toWin32Path = exports2.toPosixPath = void 0;
-    var path4 = __importStar(require("path"));
+    var path3 = __importStar(require("path"));
     function toPosixPath(pth) {
       return pth.replace(/[\\]/g, "/");
     }
@@ -18459,7 +18459,7 @@ var require_path_utils = __commonJS({
     }
     exports2.toWin32Path = toWin32Path;
     function toPlatformPath(pth) {
-      return pth.replace(/[/\\]/g, path4.sep);
+      return pth.replace(/[/\\]/g, path3.sep);
     }
     exports2.toPlatformPath = toPlatformPath;
   }
@@ -18523,7 +18523,7 @@ var require_io_util = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.getCmdPath = exports2.tryGetExecutablePath = exports2.isRooted = exports2.isDirectory = exports2.exists = exports2.READONLY = exports2.UV_FS_O_EXLOCK = exports2.IS_WINDOWS = exports2.unlink = exports2.symlink = exports2.stat = exports2.rmdir = exports2.rm = exports2.rename = exports2.readlink = exports2.readdir = exports2.open = exports2.mkdir = exports2.lstat = exports2.copyFile = exports2.chmod = void 0;
     var fs3 = __importStar(require("fs"));
-    var path4 = __importStar(require("path"));
+    var path3 = __importStar(require("path"));
     _a = fs3.promises, exports2.chmod = _a.chmod, exports2.copyFile = _a.copyFile, exports2.lstat = _a.lstat, exports2.mkdir = _a.mkdir, exports2.open = _a.open, exports2.readdir = _a.readdir, exports2.readlink = _a.readlink, exports2.rename = _a.rename, exports2.rm = _a.rm, exports2.rmdir = _a.rmdir, exports2.stat = _a.stat, exports2.symlink = _a.symlink, exports2.unlink = _a.unlink;
     exports2.IS_WINDOWS = process.platform === "win32";
     exports2.UV_FS_O_EXLOCK = 268435456;
@@ -18572,7 +18572,7 @@ var require_io_util = __commonJS({
         }
         if (stats && stats.isFile()) {
           if (exports2.IS_WINDOWS) {
-            const upperExt = path4.extname(filePath).toUpperCase();
+            const upperExt = path3.extname(filePath).toUpperCase();
             if (extensions.some((validExt) => validExt.toUpperCase() === upperExt)) {
               return filePath;
             }
@@ -18596,11 +18596,11 @@ var require_io_util = __commonJS({
           if (stats && stats.isFile()) {
             if (exports2.IS_WINDOWS) {
               try {
-                const directory = path4.dirname(filePath);
-                const upperName = path4.basename(filePath).toUpperCase();
+                const directory = path3.dirname(filePath);
+                const upperName = path3.basename(filePath).toUpperCase();
                 for (const actualName of yield exports2.readdir(directory)) {
                   if (upperName === actualName.toUpperCase()) {
-                    filePath = path4.join(directory, actualName);
+                    filePath = path3.join(directory, actualName);
                     break;
                   }
                 }
@@ -18695,7 +18695,7 @@ var require_io = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.findInPath = exports2.which = exports2.mkdirP = exports2.rmRF = exports2.mv = exports2.cp = void 0;
     var assert_1 = require("assert");
-    var path4 = __importStar(require("path"));
+    var path3 = __importStar(require("path"));
     var ioUtil = __importStar(require_io_util());
     function cp(source, dest, options = {}) {
       return __awaiter(this, void 0, void 0, function* () {
@@ -18704,7 +18704,7 @@ var require_io = __commonJS({
         if (destStat && destStat.isFile() && !force) {
           return;
         }
-        const newDest = destStat && destStat.isDirectory() && copySourceDirectory ? path4.join(dest, path4.basename(source)) : dest;
+        const newDest = destStat && destStat.isDirectory() && copySourceDirectory ? path3.join(dest, path3.basename(source)) : dest;
         if (!(yield ioUtil.exists(source))) {
           throw new Error(`no such file or directory: ${source}`);
         }
@@ -18716,7 +18716,7 @@ var require_io = __commonJS({
             yield cpDirRecursive(source, newDest, 0, force);
           }
         } else {
-          if (path4.relative(source, newDest) === "") {
+          if (path3.relative(source, newDest) === "") {
             throw new Error(`'${newDest}' and '${source}' are the same file`);
           }
           yield copyFile(source, newDest, force);
@@ -18729,7 +18729,7 @@ var require_io = __commonJS({
         if (yield ioUtil.exists(dest)) {
           let destExists = true;
           if (yield ioUtil.isDirectory(dest)) {
-            dest = path4.join(dest, path4.basename(source));
+            dest = path3.join(dest, path3.basename(source));
             destExists = yield ioUtil.exists(dest);
           }
           if (destExists) {
@@ -18740,7 +18740,7 @@ var require_io = __commonJS({
             }
           }
         }
-        yield mkdirP(path4.dirname(dest));
+        yield mkdirP(path3.dirname(dest));
         yield ioUtil.rename(source, dest);
       });
     }
@@ -18803,7 +18803,7 @@ var require_io = __commonJS({
         }
         const extensions = [];
         if (ioUtil.IS_WINDOWS && process.env["PATHEXT"]) {
-          for (const extension of process.env["PATHEXT"].split(path4.delimiter)) {
+          for (const extension of process.env["PATHEXT"].split(path3.delimiter)) {
             if (extension) {
               extensions.push(extension);
             }
@@ -18816,12 +18816,12 @@ var require_io = __commonJS({
           }
           return [];
         }
-        if (tool.includes(path4.sep)) {
+        if (tool.includes(path3.sep)) {
           return [];
         }
         const directories = [];
         if (process.env.PATH) {
-          for (const p of process.env.PATH.split(path4.delimiter)) {
+          for (const p of process.env.PATH.split(path3.delimiter)) {
             if (p) {
               directories.push(p);
             }
@@ -18829,7 +18829,7 @@ var require_io = __commonJS({
         }
         const matches = [];
         for (const directory of directories) {
-          const filePath = yield ioUtil.tryGetExecutablePath(path4.join(directory, tool), extensions);
+          const filePath = yield ioUtil.tryGetExecutablePath(path3.join(directory, tool), extensions);
           if (filePath) {
             matches.push(filePath);
           }
@@ -18942,10 +18942,10 @@ var require_toolrunner = __commonJS({
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.argStringToArray = exports2.ToolRunner = void 0;
-    var os3 = __importStar(require("os"));
+    var os2 = __importStar(require("os"));
     var events = __importStar(require("events"));
     var child = __importStar(require("child_process"));
-    var path4 = __importStar(require("path"));
+    var path3 = __importStar(require("path"));
     var io = __importStar(require_io());
     var ioUtil = __importStar(require_io_util());
     var timers_1 = require("timers");
@@ -18997,12 +18997,12 @@ var require_toolrunner = __commonJS({
       _processLineBuffer(data, strBuffer, onLine) {
         try {
           let s = strBuffer + data.toString();
-          let n = s.indexOf(os3.EOL);
+          let n = s.indexOf(os2.EOL);
           while (n > -1) {
             const line = s.substring(0, n);
             onLine(line);
-            s = s.substring(n + os3.EOL.length);
-            n = s.indexOf(os3.EOL);
+            s = s.substring(n + os2.EOL.length);
+            n = s.indexOf(os2.EOL);
           }
           return s;
         } catch (err) {
@@ -19160,7 +19160,7 @@ var require_toolrunner = __commonJS({
       exec() {
         return __awaiter(this, void 0, void 0, function* () {
           if (!ioUtil.isRooted(this.toolPath) && (this.toolPath.includes("/") || IS_WINDOWS && this.toolPath.includes("\\"))) {
-            this.toolPath = path4.resolve(process.cwd(), this.options.cwd || process.cwd(), this.toolPath);
+            this.toolPath = path3.resolve(process.cwd(), this.options.cwd || process.cwd(), this.toolPath);
           }
           this.toolPath = yield io.which(this.toolPath, true);
           return new Promise((resolve2, reject) => __awaiter(this, void 0, void 0, function* () {
@@ -19171,7 +19171,7 @@ var require_toolrunner = __commonJS({
             }
             const optionsNonNull = this._cloneExecOptions(this.options);
             if (!optionsNonNull.silent && optionsNonNull.outStream) {
-              optionsNonNull.outStream.write(this._getCommandString(optionsNonNull) + os3.EOL);
+              optionsNonNull.outStream.write(this._getCommandString(optionsNonNull) + os2.EOL);
             }
             const state = new ExecState(optionsNonNull, this.toolPath);
             state.on("debug", (message) => {
@@ -19659,8 +19659,8 @@ var require_core = __commonJS({
     var command_1 = require_command();
     var file_command_1 = require_file_command();
     var utils_1 = require_utils();
-    var os3 = __importStar(require("os"));
-    var path4 = __importStar(require("path"));
+    var os2 = __importStar(require("os"));
+    var path3 = __importStar(require("path"));
     var oidc_utils_1 = require_oidc_utils();
     var ExitCode;
     (function(ExitCode2) {
@@ -19677,10 +19677,10 @@ var require_core = __commonJS({
       (0, command_1.issueCommand)("set-env", { name }, convertedVal);
     }
     exports2.exportVariable = exportVariable;
-    function setSecret(secret) {
+    function setSecret2(secret) {
       (0, command_1.issueCommand)("add-mask", {}, secret);
     }
-    exports2.setSecret = setSecret;
+    exports2.setSecret = setSecret2;
     function addPath(inputPath) {
       const filePath = process.env["GITHUB_PATH"] || "";
       if (filePath) {
@@ -19688,7 +19688,7 @@ var require_core = __commonJS({
       } else {
         (0, command_1.issueCommand)("add-path", {}, inputPath);
       }
-      process.env["PATH"] = `${inputPath}${path4.delimiter}${process.env["PATH"]}`;
+      process.env["PATH"] = `${inputPath}${path3.delimiter}${process.env["PATH"]}`;
     }
     exports2.addPath = addPath;
     function getInput2(name, options) {
@@ -19722,15 +19722,15 @@ var require_core = __commonJS({
 Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
     exports2.getBooleanInput = getBooleanInput;
-    function setOutput(name, value) {
+    function setOutput2(name, value) {
       const filePath = process.env["GITHUB_OUTPUT"] || "";
       if (filePath) {
         return (0, file_command_1.issueFileCommand)("OUTPUT", (0, file_command_1.prepareKeyValueMessage)(name, value));
       }
-      process.stdout.write(os3.EOL);
+      process.stdout.write(os2.EOL);
       (0, command_1.issueCommand)("set-output", { name }, (0, utils_1.toCommandValue)(value));
     }
-    exports2.setOutput = setOutput;
+    exports2.setOutput = setOutput2;
     function setCommandEcho(enabled) {
       (0, command_1.issue)("echo", enabled ? "on" : "off");
     }
@@ -19761,7 +19761,7 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
     exports2.notice = notice;
     function info6(message) {
-      process.stdout.write(message + os3.EOL);
+      process.stdout.write(message + os2.EOL);
     }
     exports2.info = info6;
     function startGroup2(name) {
@@ -19844,8 +19844,8 @@ var require_context = __commonJS({
           if ((0, fs_1.existsSync)(process.env.GITHUB_EVENT_PATH)) {
             this.payload = JSON.parse((0, fs_1.readFileSync)(process.env.GITHUB_EVENT_PATH, { encoding: "utf8" }));
           } else {
-            const path4 = process.env.GITHUB_EVENT_PATH;
-            process.stdout.write(`GITHUB_EVENT_PATH ${path4} does not exist${os_1.EOL}`);
+            const path3 = process.env.GITHUB_EVENT_PATH;
+            process.stdout.write(`GITHUB_EVENT_PATH ${path3} does not exist${os_1.EOL}`);
           }
         }
         this.eventName = process.env.GITHUB_EVENT_NAME;
@@ -20786,16 +20786,16 @@ function fetchWrapper(requestOptions) {
   let headers = {};
   let status;
   let url;
-  let { fetch } = globalThis;
+  let { fetch: fetch2 } = globalThis;
   if (requestOptions.request?.fetch) {
-    fetch = requestOptions.request.fetch;
+    fetch2 = requestOptions.request.fetch;
   }
-  if (!fetch) {
+  if (!fetch2) {
     throw new Error(
       "fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). Learn more at https://github.com/octokit/octokit.js/#fetch-missing"
     );
   }
-  return fetch(requestOptions.url, {
+  return fetch2(requestOptions.url, {
     method: requestOptions.method,
     body: requestOptions.body,
     redirect: requestOptions.request?.redirect,
@@ -23936,7 +23936,7 @@ var require_github = __commonJS({
 });
 
 // src/main.ts
-var core7 = __toESM(require_core());
+var core8 = __toESM(require_core());
 var github2 = __toESM(require_github());
 
 // src/detect-groups.ts
@@ -26531,9 +26531,18 @@ var safeLoadAll = renamed("safeLoadAll", "loadAll");
 var safeDump = renamed("safeDump", "dump");
 
 // src/detect-groups.ts
-var TS_GENERATOR_PATTERN = /^(fernapi\/)?fern-typescript-(node-sdk|browser-sdk|sdk)$/;
-async function detectTypeScriptGroups() {
+var GENERATOR_PATTERNS = {
+  typescript: /^(fernapi\/)?fern-typescript-(node-sdk|browser-sdk|sdk)$/
+  // Future languages:
+  // python: /^(fernapi\/)?fern-python-sdk$/,
+  // java: /^(fernapi\/)?fern-java-sdk$/,
+  // go: /^(fernapi\/)?fern-go-sdk$/,
+};
+function detectPreviewGroups({
+  generators = "typescript"
+} = {}) {
   const results = [];
+  const patterns = generators === "all" ? Object.values(GENERATOR_PATTERNS) : [GENERATOR_PATTERNS[generators]];
   const fernDir = path.resolve("fern");
   if (!fs.existsSync(fernDir)) {
     core2.warning("No fern/ directory found in the repository root.");
@@ -26563,13 +26572,13 @@ async function detectTypeScriptGroups() {
       if (groupObj == null) {
         continue;
       }
-      const generators = groupObj.generators;
-      if (!generators) {
+      const generators2 = groupObj.generators;
+      if (!generators2) {
         continue;
       }
-      for (const gen of generators) {
+      for (const gen of generators2) {
         const name = gen.name;
-        if (TS_GENERATOR_PATTERN.test(name)) {
+        if (patterns.some((p) => p?.test(name))) {
           const githubConfig = gen.github;
           results.push({
             groupName,
@@ -26583,33 +26592,74 @@ async function detectTypeScriptGroups() {
   }
   return results;
 }
-var MAX_WALK_DEPTH = 5;
-function findGeneratorsYml(dir) {
+function findGeneratorsYml(fernDir) {
   const results = [];
-  function walk(currentDir, depth) {
-    if (depth > MAX_WALK_DEPTH) {
-      return;
-    }
-    const entries = fs.readdirSync(currentDir, { withFileTypes: true });
-    for (const entry of entries) {
-      const fullPath = path.join(currentDir, entry.name);
-      if (entry.isDirectory() && entry.name !== "node_modules") {
-        walk(fullPath, depth + 1);
-      } else if (entry.isFile() && entry.name === "generators.yml") {
-        results.push(fullPath);
+  const rootGenerators = path.join(fernDir, "generators.yml");
+  if (fs.existsSync(rootGenerators)) {
+    results.push(rootGenerators);
+  }
+  const apisDir = path.join(fernDir, "apis");
+  if (fs.existsSync(apisDir)) {
+    for (const entry of fs.readdirSync(apisDir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        const apiGenerators = path.join(apisDir, entry.name, "generators.yml");
+        if (fs.existsSync(apiGenerators)) {
+          results.push(apiGenerators);
+        }
       }
     }
   }
-  walk(dir, 0);
   return results;
 }
 
-// src/install-fern.ts
+// src/fern-api.ts
 var core3 = __toESM(require_core());
+var FIDDLE_ORIGIN = process.env.FERN_FIDDLE_ORIGIN ?? process.env.DEFAULT_FIDDLE_ORIGIN ?? "https://fiddle-coordinator.buildwithfern.com";
+async function getGithubInstallationToken({
+  owner,
+  repo,
+  fernToken
+}) {
+  const url = `${FIDDLE_ORIGIN}/api/github/installation-token`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${fernToken}`
+    },
+    body: JSON.stringify({ owner, repo })
+  });
+  if (!response.ok) {
+    let errorMessage;
+    try {
+      const body2 = await response.json();
+      errorMessage = body2.message ?? body2.error ?? response.statusText;
+    } catch {
+      errorMessage = response.statusText;
+    }
+    if (response.status === 404) {
+      throw new Error(
+        `Fern GitHub App is not installed on ${owner}/${repo}. Install it at https://github.com/apps/fern-api to enable SDK preview diffs.`
+      );
+    }
+    throw new Error(
+      `Failed to get GitHub installation token for ${owner}/${repo}: ${errorMessage}`
+    );
+  }
+  const body = await response.json();
+  if (!body.token) {
+    throw new Error(`Empty token returned for ${owner}/${repo}`);
+  }
+  core3.setSecret(body.token);
+  return body.token;
+}
+
+// src/install-fern.ts
+var core4 = __toESM(require_core());
 var exec = __toESM(require_exec());
 async function installFernCli(version) {
   const pkg = version === "latest" ? "fern-api" : `fern-api@${version}`;
-  core3.info(`Installing Fern CLI: ${pkg}`);
+  core4.info(`Installing Fern CLI: ${pkg}`);
   await exec.exec("npm", ["install", "-g", pkg]);
   let installedVersion = "";
   await exec.exec("fern", ["--version"], {
@@ -26621,21 +26671,27 @@ async function installFernCli(version) {
     },
     silent: true
   });
-  core3.info(`Installed Fern CLI version: ${installedVersion.trim()}`);
+  core4.info(`Installed Fern CLI version: ${installedVersion.trim()}`);
 }
 
 // src/post-comment.ts
-var core4 = __toESM(require_core());
+var core5 = __toESM(require_core());
 var github = __toESM(require_github());
 var COMMENT_MARKER = "<!-- fern-sdk-preview -->";
 async function postOrUpdateComment({
   results,
-  githubToken,
+  diffUrls,
   prNumber
 }) {
-  const octokit = github.getOctokit(githubToken);
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) {
+    throw new Error(
+      "GITHUB_TOKEN environment variable is not set. Ensure the workflow has `permissions: pull-requests: write` or passes GITHUB_TOKEN."
+    );
+  }
+  const octokit = github.getOctokit(token);
   const { owner, repo } = github.context.repo;
-  const body = formatComment(results);
+  const body = formatComment(results, diffUrls);
   const existing = await findExistingComment(octokit, owner, repo, prNumber);
   if (existing) {
     await octokit.rest.issues.updateComment({
@@ -26644,7 +26700,7 @@ async function postOrUpdateComment({
       comment_id: existing,
       body
     });
-    core4.info(`Updated existing PR comment (id: ${existing})`);
+    core5.info(`Updated existing PR comment (id: ${existing})`);
   } else {
     await octokit.rest.issues.createComment({
       owner,
@@ -26652,7 +26708,7 @@ async function postOrUpdateComment({
       issue_number: prNumber,
       body
     });
-    core4.info("Created new PR comment");
+    core5.info("Created new PR comment");
   }
 }
 async function findExistingComment(octokit, owner, repo, prNumber) {
@@ -26672,7 +26728,7 @@ async function findExistingComment(octokit, owner, repo, prNumber) {
 function escapeTableCell(text) {
   return text.replace(/\|/g, "\\|");
 }
-function formatComment(results) {
+function formatComment(results, diffUrls) {
   let rows = "";
   for (const result of results) {
     if (result.status === "error") {
@@ -26680,8 +26736,9 @@ function formatComment(results) {
 `;
       continue;
     }
-    const installCell = result.installCommand ? `\`${escapeTableCell(result.installCommand)}\`` : "\u2014";
-    const diffCell = result.diffUrl ? `[View diff](${result.diffUrl})` : "No changes";
+    const installCell = result.installCommand ? `<code>${escapeTableCell(result.installCommand)}</code>` : "\u2014";
+    const diffUrl = diffUrls.get(result.groupName);
+    const diffCell = diffUrl ? `[View diff](${diffUrl})` : "No changes";
     rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(result.packageName ?? "\u2014")} | ${installCell} | ${diffCell} |
 `;
   }
@@ -26709,7 +26766,7 @@ ${rows}${errorSection}
 var fs2 = __toESM(require("fs"));
 var os = __toESM(require("os"));
 var path2 = __toESM(require("path"));
-var core5 = __toESM(require_core());
+var core6 = __toESM(require_core());
 var exec3 = __toESM(require_exec());
 var REPO_PATTERN = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
 async function pushDiffBranch({
@@ -26719,16 +26776,16 @@ async function pushDiffBranch({
   githubToken
 }) {
   if (!REPO_PATTERN.test(sdkRepo)) {
-    core5.warning(`Invalid SDK repo format: '${sdkRepo}' \u2014 expected 'owner/repo'`);
+    core6.warning(`Invalid SDK repo format: '${sdkRepo}' \u2014 expected 'owner/repo'`);
     return void 0;
   }
   if (!fs2.existsSync(outputPath)) {
-    core5.warning(`Output path does not exist: ${outputPath}`);
+    core6.warning(`Output path does not exist: ${outputPath}`);
     return void 0;
   }
   const entries = fs2.readdirSync(outputPath);
   if (entries.length === 0) {
-    core5.warning(`Output path is empty: ${outputPath}`);
+    core6.warning(`Output path is empty: ${outputPath}`);
     return void 0;
   }
   const branchName = `fern-preview-pr-${prNumber}`;
@@ -26755,9 +26812,14 @@ async function pushDiffBranch({
       }
     }
     await gitExec(["-C", cloneDir, "checkout", "-b", branchName]);
+    for (const entry of fs2.readdirSync(cloneDir)) {
+      if (entry !== ".git") {
+        fs2.rmSync(path2.join(cloneDir, entry), { recursive: true, force: true });
+      }
+    }
     fs2.cpSync(outputPath, cloneDir, {
       recursive: true,
-      filter: (src) => !src.includes(`${path2.sep}.git${path2.sep}`) && !src.endsWith(`${path2.sep}.git`)
+      filter: (src) => path2.basename(src) !== ".git"
     });
     await gitExec(["-C", cloneDir, "config", "user.name", "fern-preview[bot]"]);
     await gitExec(["-C", cloneDir, "config", "user.email", "noreply@buildwithfern.com"]);
@@ -26766,61 +26828,66 @@ async function pushDiffBranch({
       ignoreReturnCode: true
     });
     if (diffExitCode === 0) {
-      core5.info(`No SDK changes detected for ${sdkRepo}`);
+      core6.info(`No SDK changes detected for ${sdkRepo}`);
       return void 0;
     }
     await gitExec(["-C", cloneDir, "commit", "-m", `SDK Preview for PR #${prNumber}`]);
     await gitExec(["-C", cloneDir, "push", "-f", "origin", branchName], { silent: true });
     const diffUrl = `https://github.com/${sdkRepo}/compare/${defaultBranch}...${branchName}`;
-    core5.info(`SDK diff pushed: ${diffUrl}`);
+    core6.info(`SDK diff pushed: ${diffUrl}`);
     return diffUrl;
   } finally {
     fs2.rmSync(cloneDir, { recursive: true, force: true });
   }
+}
+function sanitizeTokenFromMessage(message) {
+  return message.replace(/x-access-token:[^@]+@/g, "x-access-token:***@");
 }
 async function gitExec(args, options) {
   try {
     return await exec3.exec("git", args, options);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const sanitized = message.replace(/x-access-token:[^@]+@/g, "x-access-token:***@");
+    const sanitized = sanitizeTokenFromMessage(message);
     throw new Error(sanitized);
   }
 }
 
 // src/run-preview.ts
-var os2 = __toESM(require("os"));
-var path3 = __toESM(require("path"));
-var core6 = __toESM(require_core());
+var core7 = __toESM(require_core());
 var exec5 = __toESM(require_exec());
+var PREVIEW_TIMEOUT_MS = 15 * 60 * 1e3;
 async function runPreview({
   groupName,
   apiName,
   fernToken
 }) {
-  const outputDir = path3.join(
-    os2.tmpdir(),
-    "fern-preview",
-    apiName ? `${apiName}-${groupName}` : groupName
-  );
-  const args = ["sdk", "preview", "--json", "--group", groupName, "--output", outputDir];
+  const args = ["sdk", "preview", "--json", "--group", groupName];
   if (apiName) {
     args.push("--api", apiName);
   }
   let stdout = "";
   let stderr = "";
-  const exitCode = await exec5.exec("fern", args, {
-    env: { ...process.env, FERN_TOKEN: fernToken },
-    listeners: {
-      stdout: (data) => {
-        stdout += data.toString();
+  const exitCode = await withTimeout(
+    exec5.exec("fern", args, {
+      env: {
+        ...process.env,
+        FERN_TOKEN: fernToken,
+        FERN_NO_VERSION_REDIRECTION: "true"
       },
-      stderr: (data) => {
-        stderr += data.toString();
-      }
-    },
-    ignoreReturnCode: true
-  });
+      listeners: {
+        stdout: (data) => {
+          stdout += data.toString();
+        },
+        stderr: (data) => {
+          stderr += data.toString();
+        }
+      },
+      ignoreReturnCode: true
+    }),
+    PREVIEW_TIMEOUT_MS,
+    `fern sdk preview timed out after ${PREVIEW_TIMEOUT_MS / 6e4} minutes`
+  );
   const parsed = parseJsonFromOutput(stdout, groupName);
   if (exitCode !== 0 || parsed?.status === "error" || !parsed) {
     return {
@@ -26856,49 +26923,56 @@ function parseJsonFromOutput(stdout, groupName) {
     return JSON.parse(stdout.trim());
   } catch {
   }
-  try {
-    let depth = 0;
-    let endPos = -1;
-    for (let i = stdout.length - 1; i >= 0; i--) {
-      const char = stdout[i];
-      if (char === "}") {
-        if (depth === 0) {
-          endPos = i;
-        }
-        depth++;
-      } else if (char === "{") {
-        depth--;
-        if (depth === 0 && endPos !== -1) {
-          return JSON.parse(stdout.slice(i, endPos + 1));
+  const lines = stdout.split("\n");
+  for (let i = lines.length - 1; i >= 0; i--) {
+    if (lines[i].trimStart().startsWith("{")) {
+      for (let j = lines.length - 1; j >= i; j--) {
+        if (lines[j].trimEnd().endsWith("}")) {
+          try {
+            const candidate = lines.slice(i, j + 1).join("\n");
+            return JSON.parse(candidate);
+          } catch {
+          }
         }
       }
     }
-  } catch {
   }
-  core6.warning(`Failed to parse preview output for group '${groupName}'`);
+  core7.warning(`Failed to parse preview output for group '${groupName}'`);
   return void 0;
+}
+function withTimeout(promise, ms, message) {
+  return new Promise((resolve2, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve2(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
 }
 
 // src/main.ts
 async function run() {
   try {
-    const fernToken = core7.getInput("fern-token", { required: true });
-    const githubToken = core7.getInput("github-token");
-    const fernVersion = core7.getInput("fern-version") || "latest";
+    const fernToken = core8.getInput("fern-token", { required: true });
+    const fernVersion = core8.getInput("fern-version") || "latest";
     await installFernCli(fernVersion);
-    const groups = await detectTypeScriptGroups();
+    const groups = detectPreviewGroups({ generators: "typescript" });
     if (groups.length === 0) {
-      core7.info("No TypeScript generator groups found. Skipping preview.");
+      core8.info("No eligible generator groups found. Skipping preview.");
       return;
     }
-    core7.info(
-      `Found ${groups.length} TypeScript group(s): ${groups.map((g) => g.groupName).join(", ")}`
-    );
+    core8.info(`Found ${groups.length} group(s): ${groups.map((g) => g.groupName).join(", ")}`);
     const prNumber = github2.context.payload.pull_request?.number;
     const sourceOwner = github2.context.repo.owner;
     const results = [];
     for (const group of groups) {
-      core7.startGroup(
+      core8.startGroup(
         `Preview: ${group.groupName}${group.apiName ? ` (api: ${group.apiName})` : ""}`
       );
       try {
@@ -26910,7 +26984,7 @@ async function run() {
         results.push({ ...result, sdkRepo: result.sdkRepo ?? group.sdkRepo });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        core7.warning(`Preview failed for group '${group.groupName}': ${message}`);
+        core8.warning(`Preview failed for group '${group.groupName}': ${message}`);
         results.push({
           status: "error",
           groupName: group.groupName,
@@ -26918,55 +26992,65 @@ async function run() {
           error: message
         });
       }
-      core7.endGroup();
+      core8.endGroup();
     }
+    const diffUrls = /* @__PURE__ */ new Map();
     if (prNumber != null) {
       for (const result of results) {
         if (result.status === "success" && result.sdkRepo && result.outputPath) {
           const repoOwner = result.sdkRepo.split("/")[0];
-          if (repoOwner !== sourceOwner) {
-            core7.warning(
+          if (repoOwner.toLowerCase() !== sourceOwner.toLowerCase()) {
+            core8.warning(
               `Skipping diff push for '${result.groupName}': SDK repo '${result.sdkRepo}' is not owned by '${sourceOwner}'`
             );
             continue;
           }
-          core7.startGroup(`SDK diff: ${result.groupName} \u2192 ${result.sdkRepo}`);
+          core8.startGroup(`SDK diff: ${result.groupName} \u2192 ${result.sdkRepo}`);
           try {
+            const [repoOwner2, repoName] = result.sdkRepo.split("/");
+            const installationToken = await getGithubInstallationToken({
+              owner: repoOwner2,
+              repo: repoName,
+              fernToken
+            });
             const diffUrl = await pushDiffBranch({
               sdkRepo: result.sdkRepo,
               outputPath: result.outputPath,
               prNumber,
-              githubToken
+              githubToken: installationToken
             });
-            result.diffUrl = diffUrl;
+            if (diffUrl) {
+              diffUrls.set(result.groupName, diffUrl);
+            }
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            core7.warning(`Failed to push diff for '${result.groupName}': ${message}`);
+            core8.warning(`Failed to push diff for '${result.groupName}': ${message}`);
           }
-          core7.endGroup();
+          core8.endGroup();
         }
       }
     }
     if (prNumber != null) {
       try {
-        await postOrUpdateComment({ results, githubToken, prNumber });
+        await postOrUpdateComment({ results, diffUrls, prNumber });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        core7.warning(`Failed to post PR comment: ${message}`);
+        core8.warning(`Failed to post PR comment: ${message}`);
       }
     } else {
-      core7.info("Not a pull request event \u2014 skipping PR comment and SDK diff.");
+      core8.info("Not a pull request event \u2014 skipping PR comment and SDK diff.");
       for (const result of results) {
         if (result.status === "success" && result.installCommand) {
-          core7.info(`${result.groupName}: ${result.installCommand}`);
+          core8.info(`${result.groupName}: ${result.installCommand}`);
         }
       }
     }
+    core8.setOutput("results", JSON.stringify(results));
   } catch (error) {
     if (error instanceof Error) {
-      core7.setFailed(error.message);
+      core8.setFailed(error.message);
     } else {
-      core7.setFailed("An unknown error occurred");
+      core8.setFailed("An unknown error occurred");
     }
   }
 }
