@@ -3,6 +3,10 @@ description: "[ALPHA] Upgrades Fern CLI and generator versions and opens or upda
 author: "Fern"
 
 inputs:
+  version:
+    description: "Fern CLI version to use. 'auto' respects fern.config.json and falls back to latest, 'latest' always uses the newest release, 'inherit' uses the bootstrapped binary as-is, or pin to a specific version (e.g. '0.15.0')."
+    required: false
+    default: "latest"
   fern-token:
     description: "Fern token for API access and PR creation"
     required: true

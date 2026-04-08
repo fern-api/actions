@@ -3,11 +3,15 @@ description: "Keep your Fern config up to date — pull OpenAPI specs from a URL
 author: "Fern"
 
 inputs:
+  version:
+    description: "Fern CLI version to use. Use 'latest' to always get the newest release, a specific version (e.g. '0.15.0') for reproducible builds, or 'inherit' to use whatever CLI is already installed."
+    required: false
+    default: "latest"
   token:
     description: "GitHub token with contents: write and pull-requests: write on the target repository."
     required: true
   update_from_source:
-    description: "Set to 'true' to run 'fern api update' and pull the latest spec from the URL configured in generators.yml. Use this for Case 1 (public URL). Set to 'false' to sync files between repositories (Case 2)."
+    description: "Set to 'true' to run 'fern api pull' and fetch the latest spec from the URL configured in generators.yml. Set to 'false' to sync files between repositories."
     required: false
     default: "false"
   repository:
@@ -17,17 +21,45 @@ inputs:
     description: "YAML or JSON array of file/folder mappings to sync from this repo into the target repository. Each entry must have 'from' and 'to' fields (relative to repo roots), and an optional 'exclude' list of glob patterns. Only used when update_from_source is 'false'."
     required: false
   branch:
-    description: "Branch name to create or update in the target repository. Must be a stable name — do not use dynamic or timestamped names, or PR deduplication will break. Commits accumulate on this branch across runs."
+    description: "Branch name to create or update. Must be a stable name — do not use dynamic or timestamped names, or PR deduplication will break. Defaults to 'fern/pull-spec' for update_from_source mode and 'fern/sync-specs' for sync mode."
     required: false
-    default: "fern/sync-openapi"
   auto_merge:
-    description: "Set to 'true' to push directly to the branch without opening a PR. Set to 'false' to open a PR from the branch onto main. You must use 'true' when branch is 'main'."
+    description: "Set to 'true' to push directly to the branch without opening a PR. Set to 'false' to open a PR from the branch onto main."
     required: false
     default: "false"
 
 runs:
-  using: "node20"
-  main: "dist/index.js"
+  using: composite
+  steps:
+    - name: Resolve Fern CLI
+      id: cli
+      uses: fern-api/actions/resolve-cli@main
+      with:
+        version: ${{ inputs.version }}
+
+    - name: Pull spec from origin
+      if: inputs.update_from_source == 'true'
+      shell: bash
+      env:
+        FERN_TOKEN: ${{ inputs.token }}
+      run: |
+        ${{ steps.cli.outputs.fern-cmd }} gha pull-spec \
+          --token "${{ inputs.token }}" \
+          ${{ inputs.branch != '' && format('--branch "{0}"', inputs.branch) || '' }} \
+          ${{ inputs.auto_merge == 'true' && '--auto-merge' || '' }}
+
+    - name: Sync files to target repository
+      if: inputs.update_from_source != 'true'
+      shell: bash
+      env:
+        FERN_TOKEN: ${{ inputs.token }}
+      run: |
+        ${{ steps.cli.outputs.fern-cmd }} gha sync-specs \
+          --repository "${{ inputs.repository }}" \
+          --sources "${{ inputs.sources }}" \
+          --token "${{ inputs.token }}" \
+          ${{ inputs.branch != '' && format('--branch "{0}"', inputs.branch) || '' }} \
+          ${{ inputs.auto_merge == 'true' && '--auto-merge' || '' }}
 
 branding:
   icon: "refresh-cw"
