@@ -1,8 +1,8 @@
 {
-  "name": "@fern-github-actions/example-action",
+  "name": "@fern-github-actions/upgrade",
   "version": "0.0.0",
   "private": true,
-  "description": "Example GitHub Action template",
+  "description": "GitHub Action: upgrade Fern CLI and generator versions",
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",

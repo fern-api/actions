@@ -1,0 +1,55 @@
+name: Setup Fern CLI
+description: "Install the Fern CLI in your GitHub Actions workflow. Requires Node.js and npm — add actions/setup-node before this step if your runner doesn't include them."
+author: "Fern"
+
+branding:
+  icon: terminal
+  color: green
+
+inputs:
+  version:
+    description: "Fern CLI version to install. Use 'latest' to always get the newest release, or pin to a specific version (e.g. '0.15.0') for reproducible builds."
+    required: false
+    default: "latest"
+
+outputs:
+  run-id:
+    description: "The FERN_RUN_ID for this workflow run — inherited from the environment if already set, otherwise newly generated."
+    value: ${{ steps.run-id.outputs.run-id }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set FERN_RUN_ID
+      id: run-id
+      shell: bash
+      run: |
+        if [ -z "${FERN_RUN_ID}" ]; then
+          FERN_RUN_ID=$(node -e "console.log(require('crypto').randomUUID())")
+          echo "FERN_RUN_ID=${FERN_RUN_ID}" >> "$GITHUB_ENV"
+          echo "Generated new FERN_RUN_ID: ${FERN_RUN_ID}"
+        else
+          echo "Inheriting existing FERN_RUN_ID: ${FERN_RUN_ID}"
+        fi
+        echo "run-id=${FERN_RUN_ID}" >> "$GITHUB_OUTPUT"
+
+    - name: Install Fern CLI
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        if ! command -v npm &>/dev/null; then
+          echo "Error: npm is not available. Please add a Node.js setup step before this action."
+          exit 1
+        fi
+        if ! command -v node &>/dev/null; then
+          echo "Error: node is not available. Please add a Node.js setup step before this action."
+          exit 1
+        fi
+
+        PKG="fern-api"
+        [ "$VERSION" != "latest" ] && PKG="fern-api@$VERSION"
+
+        npm install -g "$PKG"
+
+        echo "Installed Fern CLI version $(FERN_NO_VERSION_REDIRECTION=true fern --version)"

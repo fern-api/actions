@@ -1,8 +1,8 @@
 {
-  "name": "@fern-github-actions/example-action",
+  "name": "@fern-github-actions/generate",
   "version": "0.0.0",
   "private": true,
-  "description": "Example GitHub Action template",
+  "description": "GitHub Action: run fern generate and open SDK PRs",
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",

@@ -1,0 +1,25 @@
+name: "verify"
+description: "[ALPHA] Validates fern changes on PRs — runs generation, self-verification, and breaking change detection"
+author: "Fern"
+
+inputs:
+  fern-token:
+    description: "Fern token for API access"
+    required: true
+  reviewers:
+    description: "GitHub teams or users to request review from on breaking changes or errors (newline-separated)"
+    required: false
+
+outputs:
+  run-id:
+    description: "UUIDv4 for this preview run"
+  verification-passed:
+    description: "Whether all generators passed self-verification"
+  breaking-changes:
+    description: "Whether breaking changes were detected via fern diff"
+  automerge-enabled:
+    description: "Whether GitHub automerge was enabled on this PR"
+
+runs:
+  using: "node20"
+  main: "dist/index.js"

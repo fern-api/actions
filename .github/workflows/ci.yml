@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build shared types
+      - name: Build shared package
         run: pnpm --filter "@fern-github-actions/shared" build
 
       - name: Typecheck

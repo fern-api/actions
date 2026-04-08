@@ -1,6 +1,6 @@
 <br/>
 <div align="center">
-  <a href="https://www.buildwithfern.com/?utm_source=github&utm_medium=readme&utm_campaign=setup-fern-cli&utm_content=logo">
+  <a href="https://www.buildwithfern.com/?utm_source=github&utm_medium=readme&utm_campaign=setup-cli&utm_content=logo">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/fern-api/fern/main/fern/images/logo-white.svg">
       <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/fern-api/fern/main/fern/images/logo-primary.svg">
@@ -11,13 +11,13 @@
 
 <br/>
 
-[![GitHub Marketplace](https://img.shields.io/badge/GitHub%20Marketplace-Setup%20Fern%20CLI-blue?logo=github)](https://github.com/marketplace/actions/setup-fern-cli)
+[![GitHub Marketplace](https://img.shields.io/badge/GitHub%20Marketplace-Setup%20Fern%20CLI-blue?logo=github)](https://github.com/marketplace/actions/setup-cli)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
-[![Documentation](https://img.shields.io/badge/Read%20our%20Documentation-black?logo=book)](https://buildwithfern.com/learn/home?utm_source=fern-api/setup-fern-cli/readme-read-our-documentation)
+[![Documentation](https://img.shields.io/badge/Read%20our%20Documentation-black?logo=book)](https://buildwithfern.com/learn/home?utm_source=fern-api/actions/setup-cli/readme-read-our-documentation)
 
 </div>
 
-# 🌿 setup-fern-cli
+# 🌿 setup-cli
 
 A GitHub Action that installs the [Fern CLI](https://github.com/fern-api/fern) in your workflow — so you can generate SDKs and docs on every push.
 
@@ -35,14 +35,14 @@ Use the major version tag (e.g. `@v1`) to automatically receive the latest updat
     node-version: "lts/*"
 
 - name: Setup Fern CLI
-  uses: fern-api/setup-fern-cli@v1
+  uses: fern-api/actions/setup-cli@v1
 ```
 
 ### With a specific version
 
 ```yaml
 - name: Setup Fern CLI
-  uses: fern-api/setup-fern-cli@v1
+  uses: fern-api/actions/setup-cli@v1
   with:
     version: "3.81.0"
 ```
@@ -73,21 +73,21 @@ jobs:
           node-version: "lts/*"
 
       - name: Setup Fern CLI
-        uses: fern-api/setup-fern-cli@v1
+        uses: fern-api/actions/setup-cli@v1
 
       - run: fern generate
 ```
 
 ## Releasing
 
-Tag the commit and publish a GitHub Release from the [fern-api/fern-github-actions](https://github.com/fern-api/fern-github-actions) monorepo:
+Tag the commit and publish a GitHub Release from the [fern-api/actions](https://github.com/fern-api/actions) monorepo:
 
 ```sh
-git tag setup-fern-cli@v1.0.1
-git push origin setup-fern-cli@v1.0.1
-gh release create setup-fern-cli@v1.0.1 --generate-notes
+git tag setup-cli@v1.0.1
+git push origin setup-cli@v1.0.1
+gh release create setup-cli@v1.0.1 --generate-notes
 ```
 
-The release workflow automatically mirrors this action to [fern-api/setup-fern-cli](https://github.com/fern-api/setup-fern-cli) and moves the major version tag (e.g. `v1`) so users pinned to `@v1` get the update immediately.
+The release workflow moves the major version tag (e.g. `v1`) so users pinned to `@v1` get the update immediately.
 
 ---

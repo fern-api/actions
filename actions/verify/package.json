@@ -1,8 +1,8 @@
 {
-  "name": "@fern-github-actions/example-action",
+  "name": "@fern-github-actions/verify",
   "version": "0.0.0",
   "private": true,
-  "description": "Example GitHub Action template",
+  "description": "GitHub Action: validate fern changes on PRs before merge",
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
