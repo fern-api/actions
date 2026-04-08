@@ -1,5 +1,3 @@
-import * as os from "node:os";
-import * as path from "node:path";
 import * as core from "@actions/core";
 import * as exec from "@actions/exec";
 
@@ -41,13 +39,7 @@ export async function runPreview({
   apiName: string | undefined;
   fernToken: string;
 }): Promise<PreviewResult> {
-  const outputDir = path.join(
-    os.tmpdir(),
-    "fern-preview",
-    apiName ? `${apiName}-${groupName}` : groupName
-  );
-
-  const args = ["sdk", "preview", "--json", "--group", groupName, "--output", outputDir];
+  const args = ["sdk", "preview", "--json", "--group", groupName];
   if (apiName) {
     args.push("--api", apiName);
   }
