@@ -5,9 +5,10 @@ A GitHub Action that publishes preview SDK packages and posts PR comments with i
 ## What it does
 
 1. **Detects** all TypeScript generator groups in your `fern/` directory
-2. **Publishes** preview packages to the Fern preview registry (`npm.buildwithfern.com`)
-3. **Pushes** a diff branch to each target SDK repo showing what would change
-4. **Posts** a PR comment with install commands and diff links
+2. **Runs** `fern sdk preview` for each group — routes through Fiddle for remote generation
+3. **Posts** a PR comment with install commands and diff links
+
+All heavy lifting (npm publishing, diff branch pushing to SDK repos) happens server-side in Fiddle, matching how `fern generate` works. No Docker or cross-repo GitHub tokens needed on the runner.
 
 ## Usage
 
@@ -48,7 +49,6 @@ The action posts (or updates) a single comment on the PR:
 - A `fern/` directory with `generators.yml` containing TypeScript SDK generators
 - A valid `FERN_TOKEN` secret
 - The [Fern GitHub App](https://github.com/apps/fern-api) installed on your SDK repos (for diff branches)
-- Docker available on the runner (default GitHub-hosted runners include Docker)
 
 ## Supported Generators
 
@@ -60,6 +60,6 @@ The action posts (or updates) a single comment on the PR:
 
 ## Notes
 
-- **Branch cleanup**: The action creates `fern-preview-pr-<N>` branches in SDK repos for diff comparisons. These branches accumulate after PRs merge or close. Consider adding a `pull_request: closed` workflow step or a periodic cleanup job to delete stale `fern-preview-pr-*` branches.
-- **Same-owner restriction**: For security, diff branches are only pushed to SDK repos owned by the same GitHub organization as the source repository. Cross-org SDK repos will be skipped with a warning.
-- **GitHub authentication**: The action uses the Fern GitHub App to mint short-lived installation tokens for pushing diff branches to SDK repos — no personal access tokens or cross-repo GitHub tokens required. This matches how `fern generate` works. The Fern GitHub App must be installed on each target SDK repo.
+- **Server-side generation**: Preview generation runs through Fiddle (Fern's cloud infrastructure), which handles npm publishing and diff branch pushing. This matches how `fern generate` works.
+- **Branch cleanup**: Fiddle creates `fern-preview-{jobVersion}` branches in SDK repos for diff comparisons. Consider a periodic cleanup job to delete stale `fern-preview-*` branches.
+- **GitHub authentication**: Fiddle uses the Fern GitHub App to push diff branches to SDK repos server-side — no personal access tokens or cross-repo GitHub tokens required from users.

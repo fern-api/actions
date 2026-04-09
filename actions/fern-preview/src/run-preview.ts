@@ -6,13 +6,12 @@ const PREVIEW_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 export interface PreviewResult {
   status: "success" | "error";
   groupName: string;
-  sdkRepo: string | undefined;
   previewId?: string;
   installCommand?: string;
   packageName?: string;
   version?: string;
   registryUrl?: string;
-  outputPath?: string;
+  diffUrl?: string;
   error?: string;
 }
 
@@ -26,7 +25,7 @@ interface FernPreviewJson {
     version: string;
     package_name: string;
     registry_url: string;
-    output_path?: string;
+    diff_url?: string;
   }>;
 }
 
@@ -76,7 +75,6 @@ export async function runPreview({
     return {
       status: "error",
       groupName,
-      sdkRepo: undefined,
       error: (parsed?.message ?? stderr.trim()) || `Exit code ${exitCode}`,
     };
   }
@@ -89,7 +87,6 @@ export async function runPreview({
     return {
       status: "error",
       groupName,
-      sdkRepo: undefined,
       error: "No preview entries in output",
     };
   }
@@ -97,13 +94,12 @@ export async function runPreview({
   return {
     status: "success",
     groupName,
-    sdkRepo: undefined,
     previewId: preview.preview_id,
     installCommand: preview.install,
     packageName: preview.package_name,
     version: preview.version,
     registryUrl: preview.registry_url,
-    outputPath: preview.output_path,
+    diffUrl: preview.diff_url,
   };
 }
 
