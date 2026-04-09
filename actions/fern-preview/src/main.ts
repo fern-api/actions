@@ -9,6 +9,7 @@ async function run(): Promise<void> {
   try {
     const fernToken = core.getInput("fern-token", { required: true });
     const fernVersion = core.getInput("fern-version") || "latest";
+    const githubToken = core.getInput("github-token", { required: true });
 
     // 1. Install Fern CLI
     await installFernCli(fernVersion);
@@ -53,7 +54,7 @@ async function run(): Promise<void> {
     // 4. Post or update PR comment
     if (prNumber != null) {
       try {
-        await postOrUpdateComment({ results, prNumber });
+        await postOrUpdateComment({ results, prNumber, token: githubToken });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         core.warning(`Failed to post PR comment: ${message}`);

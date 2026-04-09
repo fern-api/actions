@@ -26638,14 +26638,9 @@ var github = __toESM(require_github());
 var COMMENT_MARKER = "<!-- fern-sdk-preview -->";
 async function postOrUpdateComment({
   results,
-  prNumber
+  prNumber,
+  token
 }) {
-  const token = process.env.GITHUB_TOKEN;
-  if (!token) {
-    throw new Error(
-      "GITHUB_TOKEN environment variable is not set. Ensure the workflow has `permissions: pull-requests: write` or passes GITHUB_TOKEN."
-    );
-  }
   const octokit = github.getOctokit(token);
   const { owner, repo } = github.context.repo;
   const body = formatComment(results);
@@ -26714,7 +26709,7 @@ function formatComment(results) {
 | Group | Package | Install | SDK Diff |
 |-------|---------|---------|----------|
 ${rows}${errorSection}
-<sub>Published by <a href="https://github.com/fern-api/fern-github-actions">fern-preview</a></sub>
+<sub>Published by <a href="https://github.com/fern-api/actions">fern-preview</a></sub>
 `;
 }
 
@@ -26823,6 +26818,7 @@ async function run() {
   try {
     const fernToken = core6.getInput("fern-token", { required: true });
     const fernVersion = core6.getInput("fern-version") || "latest";
+    const githubToken = core6.getInput("github-token", { required: true });
     await installFernCli(fernVersion);
     const groups = detectPreviewGroups({ generators: "typescript" });
     if (groups.length === 0) {
@@ -26856,7 +26852,7 @@ async function run() {
     }
     if (prNumber != null) {
       try {
-        await postOrUpdateComment({ results, prNumber });
+        await postOrUpdateComment({ results, prNumber, token: githubToken });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         core6.warning(`Failed to post PR comment: ${message}`);

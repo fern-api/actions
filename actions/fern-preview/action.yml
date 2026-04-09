@@ -9,6 +9,10 @@ inputs:
     description: "Fern CLI version to install (e.g. 'latest', '3.98.5')"
     required: false
     default: "latest"
+  github-token:
+    description: "GitHub token for posting PR comments. Defaults to the built-in GITHUB_TOKEN."
+    required: false
+    default: ${{ github.token }}
 outputs:
   results:
     description: "JSON array of preview results (status, groupName, packageName, installCommand, version)"
