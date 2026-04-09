@@ -42,24 +42,34 @@ runs:
       shell: bash
       env:
         FERN_TOKEN: ${{ inputs.token }}
+        TOKEN: ${{ inputs.token }}
+        BRANCH: ${{ inputs.branch }}
+        AUTO_MERGE: ${{ inputs.auto_merge }}
       run: |
-        ${{ steps.cli.outputs.fern-cmd }} gha pull-spec \
-          --token "${{ inputs.token }}" \
-          ${{ inputs.branch != '' && format('--branch "{0}"', inputs.branch) || '' }} \
-          ${{ inputs.auto_merge == 'true' && '--auto-merge' || '' }}
+        ARGS=()
+        ARGS+=(--token "$TOKEN")
+        [ -n "$BRANCH" ] && ARGS+=(--branch "$BRANCH")
+        [ "$AUTO_MERGE" = "true" ] && ARGS+=(--auto-merge)
+        ${{ steps.cli.outputs.fern-cmd }} gha pull-spec "${ARGS[@]}"
 
     - name: Sync files to target repository
       if: inputs.update_from_source != 'true'
       shell: bash
       env:
         FERN_TOKEN: ${{ inputs.token }}
+        REPOSITORY: ${{ inputs.repository }}
+        SOURCES: ${{ inputs.sources }}
+        TOKEN: ${{ inputs.token }}
+        BRANCH: ${{ inputs.branch }}
+        AUTO_MERGE: ${{ inputs.auto_merge }}
       run: |
-        ${{ steps.cli.outputs.fern-cmd }} gha sync-specs \
-          --repository "${{ inputs.repository }}" \
-          --sources "${{ inputs.sources }}" \
-          --token "${{ inputs.token }}" \
-          ${{ inputs.branch != '' && format('--branch "{0}"', inputs.branch) || '' }} \
-          ${{ inputs.auto_merge == 'true' && '--auto-merge' || '' }}
+        ARGS=()
+        ARGS+=(--repository "$REPOSITORY")
+        ARGS+=(--sources "$SOURCES")
+        ARGS+=(--token "$TOKEN")
+        [ -n "$BRANCH" ] && ARGS+=(--branch "$BRANCH")
+        [ "$AUTO_MERGE" = "true" ] && ARGS+=(--auto-merge)
+        ${{ steps.cli.outputs.fern-cmd }} gha sync-specs "${ARGS[@]}"
 
 branding:
   icon: "refresh-cw"

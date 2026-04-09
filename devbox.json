@@ -1,6 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.16.0/.schema/devbox.schema.json",
-  "packages": ["nodejs@20", "pnpm@10.30.1", "git@latest", "gh@latest"],
+  "packages": ["nodejs@20", "git@latest", "gh@latest", "actionlint@1.7.10"],
+  "env": {
+    "DEVBOX_COREPACK_ENABLED": "true"
+  },
   "shell": {
     "init_hook": [
       "printf '\\033]0;%s\\007' 'fern-github-actions (devbox)'",
@@ -13,7 +16,8 @@
       "install": "pnpm install",
       "build": "pnpm build",
       "test": "pnpm test",
-      "check": "pnpm check"
+      "check": "pnpm check",
+      "lint-actions": "actionlint"
     }
   }
 }
