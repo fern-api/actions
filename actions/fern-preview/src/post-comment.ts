@@ -106,6 +106,6 @@ export function formatComment(results: PreviewResult[]): string {
 | Group | Package | Install | SDK Diff |
 |-------|---------|---------|----------|
 ${rows}${errorSection}
-<sub>Published by <a href="https://github.com/fern-api/fern-github-actions">fern-preview</a></sub>
+<sub>Published by <a href="https://github.com/fern-api/actions">fern-preview</a></sub>
 `;
 }
