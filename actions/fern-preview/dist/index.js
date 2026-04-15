@@ -26789,7 +26789,10 @@ function parseJsonFromOutput(stdout, groupName) {
         if (lines[j].trimEnd().endsWith("}")) {
           try {
             const candidate = lines.slice(i, j + 1).join("\n");
-            return JSON.parse(candidate);
+            const obj = JSON.parse(candidate);
+            if (typeof obj.status === "string") {
+              return obj;
+            }
           } catch {
           }
         }

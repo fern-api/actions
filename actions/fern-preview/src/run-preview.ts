@@ -130,6 +130,8 @@ export function parseJsonFromOutput(
   // to parse from there to the end. The CLI writes the JSON object starting
   // on its own line, so we scan backwards for lines beginning with '{'.
   // We also scan backwards for the closing '}' to handle trailing log lines.
+  // We validate the parsed object has a 'status' field to avoid matching
+  // inner JSON fragments (e.g., individual preview entries).
   const lines = stdout.split("\n");
   for (let i = lines.length - 1; i >= 0; i--) {
     if (lines[i].trimStart().startsWith("{")) {
@@ -138,7 +140,10 @@ export function parseJsonFromOutput(
         if (lines[j].trimEnd().endsWith("}")) {
           try {
             const candidate = lines.slice(i, j + 1).join("\n");
-            return JSON.parse(candidate) as FernPreviewJson;
+            const obj = JSON.parse(candidate) as FernPreviewJson;
+            if (typeof obj.status === "string") {
+              return obj;
+            }
           } catch {
             // Not valid JSON for this range — keep scanning
           }
