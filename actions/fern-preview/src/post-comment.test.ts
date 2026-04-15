@@ -1,6 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { formatComment } from "./post-comment.js";
 import type { PreviewResult } from "./run-preview.js";
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2025-06-15T12:30:45.123Z"));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe("formatComment", () => {
   it("formats successful results with install and diff", () => {
@@ -21,6 +30,7 @@ describe("formatComment", () => {
     expect(comment).toContain("@acme-preview/sdk");
     expect(comment).toContain("[View diff]");
     expect(comment).not.toContain("### Errors");
+    expect(comment).toContain("Last updated 2025-06-15 12:30:45 UTC");
   });
 
   it("formats error results", () => {

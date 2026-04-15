@@ -92,12 +92,17 @@ export function formatComment(results: PreviewResult[]): string {
     }
   }
 
+  const updatedAt = new Date()
+    .toISOString()
+    .replace("T", " ")
+    .replace(/\.\d+Z$/, " UTC");
+
   return `${COMMENT_MARKER}
 ## SDK Preview
 
 | Group | Package | Install | SDK Diff |
 |-------|---------|---------|----------|
 ${rows}${errorSection}
-<sub>Published by <a href="https://github.com/fern-api/actions">fern-preview</a></sub>
+<sub>Published by <a href="https://github.com/fern-api/actions">fern-preview</a> · Last updated ${updatedAt}</sub>
 `;
 }
