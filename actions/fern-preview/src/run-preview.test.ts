@@ -5,12 +5,12 @@ vi.mock("@actions/core", () => ({
   warning: vi.fn(),
 }));
 
-import { parseJsonFromOutput } from "./run-preview.js";
+import { extractJsonFromOutput } from "./run-preview.js";
 
-describe("parseJsonFromOutput", () => {
+describe("extractJsonFromOutput", () => {
   it("parses clean JSON output", () => {
     const json = JSON.stringify({ status: "success", previews: [] }, null, 2);
-    const result = parseJsonFromOutput(json, "test");
+    const result = extractJsonFromOutput(json);
     expect(result).toEqual({ status: "success", previews: [] });
   });
 
@@ -22,7 +22,7 @@ Another log line
   "previews": []
 }
 Trailing log line`;
-    const result = parseJsonFromOutput(stdout, "test");
+    const result = extractJsonFromOutput(stdout);
     expect(result).toEqual({ status: "success", previews: [] });
   });
 
@@ -30,7 +30,7 @@ Trailing log line`;
     const stdout = `Log line before
 {"status":"success","previews":[]}
 Log line after`;
-    const result = parseJsonFromOutput(stdout, "test");
+    const result = extractJsonFromOutput(stdout);
     expect(result).toEqual({ status: "success", previews: [] });
   });
 
@@ -40,7 +40,7 @@ Log line after`;
   "status": "success",
   "previews": []
 }`;
-    const result = parseJsonFromOutput(stdout, "test");
+    const result = extractJsonFromOutput(stdout);
     expect(result).toEqual({ status: "success", previews: [] });
   });
 
@@ -51,7 +51,7 @@ Log line after`;
   "message": "Processed {group: ts-sdk}",
   "previews": []
 }`;
-    const result = parseJsonFromOutput(stdout, "test");
+    const result = extractJsonFromOutput(stdout);
     expect(result).toEqual({
       status: "success",
       message: "Processed {group: ts-sdk}",
@@ -60,12 +60,12 @@ Log line after`;
   });
 
   it("returns undefined for non-JSON output", () => {
-    const result = parseJsonFromOutput("no json here", "test");
+    const result = extractJsonFromOutput("no json here");
     expect(result).toBeUndefined();
   });
 
   it("returns undefined for empty output", () => {
-    const result = parseJsonFromOutput("", "test");
+    const result = extractJsonFromOutput("");
     expect(result).toBeUndefined();
   });
 });

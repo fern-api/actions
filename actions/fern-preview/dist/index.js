@@ -26750,7 +26750,10 @@ async function runPreview({
     PREVIEW_TIMEOUT_MS,
     `fern sdk preview timed out after ${PREVIEW_TIMEOUT_MS / 6e4} minutes`
   );
-  const parsed = parseJsonFromOutput(stdout, groupName) ?? parseJsonFromOutput(stderr, groupName);
+  const parsed = extractJsonFromOutput(stdout) ?? extractJsonFromOutput(stderr);
+  if (!parsed) {
+    core5.warning(`Failed to parse preview output for group '${groupName}'`);
+  }
   if (exitCode !== 0 || parsed?.status === "error" || !parsed) {
     return {
       status: "error",
@@ -26777,12 +26780,18 @@ async function runPreview({
     diffUrl: preview.diff_url
   };
 }
-function parseJsonFromOutput(stdout, groupName) {
+function extractJsonFromOutput(output) {
+  if (!output.trim()) {
+    return void 0;
+  }
   try {
-    return JSON.parse(stdout.trim());
+    const obj = JSON.parse(output.trim());
+    if (typeof obj.status === "string") {
+      return obj;
+    }
   } catch {
   }
-  const lines = stdout.split("\n");
+  const lines = output.split("\n");
   for (let i = lines.length - 1; i >= 0; i--) {
     if (lines[i].trimStart().startsWith("{")) {
       for (let j = lines.length - 1; j >= i; j--) {
@@ -26799,7 +26808,6 @@ function parseJsonFromOutput(stdout, groupName) {
       }
     }
   }
-  core5.warning(`Failed to parse preview output for group '${groupName}'`);
   return void 0;
 }
 function withTimeout(promise, ms, message) {

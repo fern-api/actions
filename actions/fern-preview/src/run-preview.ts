@@ -74,7 +74,10 @@ export async function runPreview({
   // Parse JSON from CLI output. The CLI writes JSON via process.stdout.write(),
   // but due to version redirection and process spawning, the JSON may end up in
   // stderr instead. Try stdout first, then fall back to stderr.
-  const parsed = parseJsonFromOutput(stdout, groupName) ?? parseJsonFromOutput(stderr, groupName);
+  const parsed = extractJsonFromOutput(stdout) ?? extractJsonFromOutput(stderr);
+  if (!parsed) {
+    core.warning(`Failed to parse preview output for group '${groupName}'`);
+  }
 
   if (exitCode !== 0 || parsed?.status === "error" || !parsed) {
     return {
@@ -109,19 +112,23 @@ export async function runPreview({
 }
 
 /**
- * Extracts a JSON object from stdout that may contain non-JSON log lines.
- * Tries JSON.parse(stdout) first (clean output), then falls back to scanning
+ * Extracts a JSON object from output that may contain non-JSON log lines.
+ * Tries JSON.parse first (clean output), then falls back to scanning
  * lines from the end looking for lines that start with '{' and trying to parse
- * from there. This handles both pretty-printed and compact JSON, as well as
- * braces inside string values.
+ * from there. Validates the parsed object has a 'status' field to avoid
+ * matching inner JSON fragments (e.g., individual preview entries).
  */
-export function parseJsonFromOutput(
-  stdout: string,
-  groupName: string
-): FernPreviewJson | undefined {
-  // Happy path: stdout is clean JSON
+export function extractJsonFromOutput(output: string): FernPreviewJson | undefined {
+  if (!output.trim()) {
+    return undefined;
+  }
+
+  // Happy path: output is clean JSON
   try {
-    return JSON.parse(stdout.trim()) as FernPreviewJson;
+    const obj = JSON.parse(output.trim()) as FernPreviewJson;
+    if (typeof obj.status === "string") {
+      return obj;
+    }
   } catch {
     // Expected when log lines are mixed in
   }
@@ -130,9 +137,7 @@ export function parseJsonFromOutput(
   // to parse from there to the end. The CLI writes the JSON object starting
   // on its own line, so we scan backwards for lines beginning with '{'.
   // We also scan backwards for the closing '}' to handle trailing log lines.
-  // We validate the parsed object has a 'status' field to avoid matching
-  // inner JSON fragments (e.g., individual preview entries).
-  const lines = stdout.split("\n");
+  const lines = output.split("\n");
   for (let i = lines.length - 1; i >= 0; i--) {
     if (lines[i].trimStart().startsWith("{")) {
       // Try parsing from this line to each '}' line, scanning from the end
@@ -152,7 +157,6 @@ export function parseJsonFromOutput(
     }
   }
 
-  core.warning(`Failed to parse preview output for group '${groupName}'`);
   return undefined;
 }
 
