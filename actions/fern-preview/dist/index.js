@@ -26750,7 +26750,7 @@ async function runPreview({
     PREVIEW_TIMEOUT_MS,
     `fern sdk preview timed out after ${PREVIEW_TIMEOUT_MS / 6e4} minutes`
   );
-  const parsed = parseJsonFromOutput(stdout, groupName);
+  const parsed = parseJsonFromOutput(stdout, groupName) ?? parseJsonFromOutput(stderr, groupName);
   if (exitCode !== 0 || parsed?.status === "error" || !parsed) {
     return {
       status: "error",

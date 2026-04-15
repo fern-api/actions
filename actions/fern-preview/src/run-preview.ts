@@ -71,10 +71,10 @@ export async function runPreview({
     `fern sdk preview timed out after ${PREVIEW_TIMEOUT_MS / 60000} minutes`
   );
 
-  // Parse JSON from stdout. The CLI writes a JSON object but may also emit
-  // log lines before/after it. Try clean parse first, then fall back to
-  // scanning lines from the end for the start of a JSON object.
-  const parsed = parseJsonFromOutput(stdout, groupName);
+  // Parse JSON from CLI output. The CLI writes JSON via process.stdout.write(),
+  // but due to version redirection and process spawning, the JSON may end up in
+  // stderr instead. Try stdout first, then fall back to stderr.
+  const parsed = parseJsonFromOutput(stdout, groupName) ?? parseJsonFromOutput(stderr, groupName);
 
   if (exitCode !== 0 || parsed?.status === "error" || !parsed) {
     return {
