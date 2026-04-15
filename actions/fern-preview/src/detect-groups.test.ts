@@ -46,7 +46,7 @@ groups:
     );
 
     const groups = detectPreviewGroups();
-    expect(groups).toEqual([{ groupName: "ts-sdk", apiName: undefined, sdkRepo: "acme/ts-sdk" }]);
+    expect(groups).toEqual([{ groupName: "ts-sdk", apiName: undefined }]);
   });
 
   it("detects groups from multi-api layout", () => {
@@ -64,7 +64,7 @@ groups:
     );
 
     const groups = detectPreviewGroups();
-    expect(groups).toEqual([{ groupName: "ts-sdk", apiName: "bar", sdkRepo: "acme/bar-ts-sdk" }]);
+    expect(groups).toEqual([{ groupName: "ts-sdk", apiName: "bar" }]);
   });
 
   it("skips non-TypeScript generators", () => {
@@ -104,7 +104,7 @@ groups:
     );
 
     const groups = detectPreviewGroups();
-    expect(groups).toEqual([{ groupName: "internal", apiName: undefined, sdkRepo: undefined }]);
+    expect(groups).toEqual([{ groupName: "internal", apiName: undefined }]);
   });
 
   it("handles malformed YAML gracefully", () => {

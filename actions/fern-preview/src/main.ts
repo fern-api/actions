@@ -10,6 +10,7 @@ async function run(): Promise<void> {
     const fernToken = core.getInput("fern-token", { required: true });
     const fernVersion = core.getInput("fern-version") || "latest";
     const githubToken = core.getInput("github-token", { required: true });
+    const pushDiff = core.getInput("push-diff") !== "false";
 
     // 1. Install Fern CLI
     await installFernCli(fernVersion);
@@ -37,6 +38,7 @@ async function run(): Promise<void> {
           groupName: group.groupName,
           apiName: group.apiName,
           fernToken,
+          pushDiff,
         });
         results.push(result);
       } catch (error) {

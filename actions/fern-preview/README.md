@@ -35,6 +35,8 @@ jobs:
 |-------|----------|---------|-------------|
 | `fern-token` | Yes | — | Fern authentication token (`FERN_TOKEN`) |
 | `fern-version` | No | `latest` | Fern CLI version to install |
+| `github-token` | No | `${{ github.token }}` | GitHub token for posting PR comments |
+| `push-diff` | No | `true` | Push a preview diff branch to the SDK repo for comparison |
 
 ## PR Comment
 

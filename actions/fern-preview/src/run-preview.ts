@@ -33,14 +33,19 @@ export async function runPreview({
   groupName,
   apiName,
   fernToken,
+  pushDiff,
 }: {
   groupName: string;
   apiName: string | undefined;
   fernToken: string;
+  pushDiff: boolean;
 }): Promise<PreviewResult> {
   const args = ["sdk", "preview", "--json", "--group", groupName];
   if (apiName) {
     args.push("--api", apiName);
+  }
+  if (pushDiff) {
+    args.push("--push-diff");
   }
 
   let stdout = "";
@@ -146,6 +151,10 @@ export function parseJsonFromOutput(
   return undefined;
 }
 
+// Note: withTimeout rejects the wrapping promise on timeout but does NOT kill the
+// underlying child process spawned by exec.exec. The Node.js event loop stays alive
+// until the child exits on its own. The GitHub Actions job-level timeout is the real
+// safety net; this timeout primarily provides better error reporting in the PR comment.
 function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(message)), ms);

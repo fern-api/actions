@@ -6,7 +6,6 @@ import * as yaml from "js-yaml";
 export interface DetectedGroup {
   groupName: string;
   apiName: string | undefined;
-  sdkRepo: string | undefined;
 }
 
 const GENERATOR_PATTERNS: Record<string, RegExp> = {
@@ -69,11 +68,9 @@ export function detectPreviewGroups({
       for (const gen of generators) {
         const name = gen.name as string;
         if (patterns.some((p) => p?.test(name))) {
-          const githubConfig = gen.github as Record<string, string> | undefined;
           results.push({
             groupName,
             apiName,
-            sdkRepo: githubConfig?.repository,
           });
           break; // One match per group is enough
         }

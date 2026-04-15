@@ -26579,11 +26579,9 @@ function detectPreviewGroups({
       for (const gen of generators2) {
         const name = gen.name;
         if (patterns.some((p) => p?.test(name))) {
-          const githubConfig = gen.github;
           results.push({
             groupName,
-            apiName,
-            sdkRepo: githubConfig?.repository
+            apiName
           });
           break;
         }
@@ -26720,11 +26718,15 @@ var PREVIEW_TIMEOUT_MS = 15 * 60 * 1e3;
 async function runPreview({
   groupName,
   apiName,
-  fernToken
+  fernToken,
+  pushDiff
 }) {
   const args = ["sdk", "preview", "--json", "--group", groupName];
   if (apiName) {
     args.push("--api", apiName);
+  }
+  if (pushDiff) {
+    args.push("--push-diff");
   }
   let stdout = "";
   let stderr = "";
@@ -26819,6 +26821,7 @@ async function run() {
     const fernToken = core6.getInput("fern-token", { required: true });
     const fernVersion = core6.getInput("fern-version") || "latest";
     const githubToken = core6.getInput("github-token", { required: true });
+    const pushDiff = core6.getInput("push-diff") !== "false";
     await installFernCli(fernVersion);
     const groups = detectPreviewGroups({ generators: "typescript" });
     if (groups.length === 0) {
@@ -26836,7 +26839,8 @@ async function run() {
         const result = await runPreview({
           groupName: group.groupName,
           apiName: group.apiName,
-          fernToken
+          fernToken,
+          pushDiff
         });
         results.push(result);
       } catch (error) {
