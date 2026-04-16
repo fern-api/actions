@@ -55,7 +55,6 @@ export async function runPreview({
       env: {
         ...process.env,
         FERN_TOKEN: fernToken,
-        FERN_NO_VERSION_REDIRECTION: "true",
       },
       listeners: {
         stdout: (data: Buffer) => {

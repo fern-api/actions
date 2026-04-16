@@ -26767,8 +26767,7 @@ async function runPreview({
     exec3.exec("fern", args, {
       env: {
         ...process.env,
-        FERN_TOKEN: fernToken,
-        FERN_NO_VERSION_REDIRECTION: "true"
+        FERN_TOKEN: fernToken
       },
       listeners: {
         stdout: (data) => {
