@@ -26808,7 +26808,7 @@ function escapeHtml(text) {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 function escapeMarkdown(text) {
-  return text.replace(/([\\`*_{}[\]()#+\-.!~>|])/g, "\\$1");
+  return text.replace(/([\\`*_{}[\]()#+\-.!~<>|])/g, "\\$1");
 }
 function sanitizeUrl(url) {
   try {

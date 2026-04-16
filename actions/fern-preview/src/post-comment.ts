@@ -71,7 +71,7 @@ function escapeHtml(text: string): string {
 
 /** Escape markdown special characters in user-facing text to prevent injection. */
 function escapeMarkdown(text: string): string {
-  return text.replace(/([\\`*_{}[\]()#+\-.!~>|])/g, "\\$1");
+  return text.replace(/([\\`*_{}[\]()#+\-.!~<>|])/g, "\\$1");
 }
 
 /** Only allow https:// URLs for diff links to prevent markdown/script injection. */
