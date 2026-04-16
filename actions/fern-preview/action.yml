@@ -12,7 +12,7 @@ inputs:
   github-token:
     description: "GitHub token for posting PR comments. Defaults to the built-in GITHUB_TOKEN."
     required: false
-    default: ${{ github.token }}
+    default: "${{ github.token }}"
   push-diff:
     description: "Push a preview diff branch to the SDK repo for comparison. Requires github config in generators.yml."
     required: false

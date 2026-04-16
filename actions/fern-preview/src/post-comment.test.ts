@@ -95,13 +95,46 @@ describe("formatComment", () => {
     ];
 
     const comment = formatComment(results);
-    // Error details section should preserve newlines (it's outside the table)
-    expect(comment).toContain("Line one\nLine two\nLine three");
+    // Error details section should contain all lines (markdown-escaped but present)
+    expect(comment).toContain("Line one");
+    expect(comment).toContain("Line two");
+    expect(comment).toContain("Line three");
     // The table row itself should not contain raw newlines
     const tableRows = comment.split("\n").filter((line) => line.startsWith("|"));
     for (const row of tableRows) {
       // Each table row should be a single line (no embedded newlines)
       expect(row).not.toMatch(/\n/);
     }
+  });
+
+  it("rejects non-https diff URLs", () => {
+    const results: PreviewResult[] = [
+      {
+        status: "success",
+        groupName: "ts-sdk",
+        packageName: "@acme-preview/sdk",
+        installCommand: "npm install ...",
+        diffUrl: "javascript:alert(1)",
+      },
+    ];
+
+    const comment = formatComment(results);
+    expect(comment).not.toContain("[View diff]");
+    expect(comment).not.toContain("javascript:");
+  });
+
+  it("escapes markdown special characters in error messages", () => {
+    const results: PreviewResult[] = [
+      {
+        status: "error",
+        groupName: "ts-sdk",
+        error: "**bold** [link](http://evil.com)",
+      },
+    ];
+
+    const comment = formatComment(results);
+    // The markdown special characters should be escaped in the error section
+    expect(comment).not.toContain("[link](http://evil.com)");
+    expect(comment).toContain("\\*\\*bold\\*\\*");
   });
 });

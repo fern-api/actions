@@ -64,6 +64,24 @@ function escapeTableCell(text: string): string {
   return text.replace(/\|/g, "\\|");
 }
 
+/** Escape markdown special characters in user-facing text to prevent injection. */
+function escapeMarkdown(text: string): string {
+  return text.replace(/([\\`*_{}[\]()#+\-.!~>|])/g, "\\$1");
+}
+
+/** Only allow https:// URLs for diff links to prevent markdown/script injection. */
+function sanitizeUrl(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === "https:") {
+      return parsed.href;
+    }
+  } catch {
+    // invalid URL
+  }
+  return undefined;
+}
+
 export function formatComment(results: PreviewResult[]): string {
   let rows = "";
 
@@ -77,7 +95,8 @@ export function formatComment(results: PreviewResult[]): string {
       ? `<code>${escapeTableCell(result.installCommand)}</code>`
       : "—";
 
-    const diffCell = result.diffUrl ? `[View diff](${result.diffUrl})` : "—";
+    const sanitizedDiffUrl = result.diffUrl ? sanitizeUrl(result.diffUrl) : undefined;
+    const diffCell = sanitizedDiffUrl ? `[View diff](${sanitizedDiffUrl})` : "—";
 
     rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(result.packageName ?? "—")} | ${installCell} | ${diffCell} |\n`;
   }
@@ -88,7 +107,7 @@ export function formatComment(results: PreviewResult[]): string {
   if (errors.length > 0) {
     errorSection = "\n### Errors\n\n";
     for (const err of errors) {
-      errorSection += `**${err.groupName}**: ${err.error}\n\n`;
+      errorSection += `**${escapeMarkdown(err.groupName)}**: ${escapeMarkdown(err.error ?? "Unknown error")}\n\n`;
     }
   }
 

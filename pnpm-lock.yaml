@@ -57,6 +57,9 @@ importers:
       '@actions/github':
         specifier: ^6.0.1
         version: 6.0.1
+      '@fern-github-actions/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       js-yaml:
         specifier: ^4.1.1
         version: 4.1.1

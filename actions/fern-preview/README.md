@@ -37,6 +37,7 @@ jobs:
 | `fern-version` | No | `auto` | Fern CLI version to install. `auto` respects `fern.config.json`. |
 | `github-token` | No | `${{ github.token }}` | GitHub token for posting PR comments |
 | `push-diff` | No | `true` | Push a preview diff branch to the SDK repo for comparison |
+| `fern-repo-ref` | No | — | _(Internal)_ Build CLI from source at this `fern-api/fern` git ref instead of installing from npm |
 
 ## PR Comment
 

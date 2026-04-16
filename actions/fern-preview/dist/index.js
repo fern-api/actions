@@ -184,7 +184,7 @@ var require_file_command = __commonJS({
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.prepareKeyValueMessage = exports2.issueFileCommand = void 0;
-    var crypto = __importStar(require("crypto"));
+    var crypto2 = __importStar(require("crypto"));
     var fs2 = __importStar(require("fs"));
     var os = __importStar(require("os"));
     var utils_1 = require_utils();
@@ -202,7 +202,7 @@ var require_file_command = __commonJS({
     }
     exports2.issueFileCommand = issueFileCommand;
     function prepareKeyValueMessage(key, value) {
-      const delimiter = `ghadelimiter_${crypto.randomUUID()}`;
+      const delimiter = `ghadelimiter_${crypto2.randomUUID()}`;
       const convertedValue = (0, utils_1.toCommandValue)(value);
       if (key.includes(delimiter)) {
         throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
@@ -3639,11 +3639,11 @@ var require_util2 = __commonJS({
     var assert = require("assert");
     var { isUint8Array } = require("util/types");
     var supportedHashes = [];
-    var crypto;
+    var crypto2;
     try {
-      crypto = require("crypto");
+      crypto2 = require("crypto");
       const possibleRelevantHashes = ["sha256", "sha384", "sha512"];
-      supportedHashes = crypto.getHashes().filter((hash) => possibleRelevantHashes.includes(hash));
+      supportedHashes = crypto2.getHashes().filter((hash) => possibleRelevantHashes.includes(hash));
     } catch {
     }
     function responseURL(response) {
@@ -3920,7 +3920,7 @@ var require_util2 = __commonJS({
       }
     }
     function bytesMatch(bytes, metadataList) {
-      if (crypto === void 0) {
+      if (crypto2 === void 0) {
         return true;
       }
       const parsedMetadata = parseMetadata(metadataList);
@@ -3935,7 +3935,7 @@ var require_util2 = __commonJS({
       for (const item of metadata) {
         const algorithm = item.algo;
         const expectedValue = item.hash;
-        let actualValue = crypto.createHash(algorithm).update(bytes).digest("base64");
+        let actualValue = crypto2.createHash(algorithm).update(bytes).digest("base64");
         if (actualValue[actualValue.length - 1] === "=") {
           if (actualValue[actualValue.length - 2] === "=") {
             actualValue = actualValue.slice(0, -2);
@@ -5282,8 +5282,8 @@ var require_body = __commonJS({
     var { parseMIMEType, serializeAMimeType } = require_dataURL();
     var random;
     try {
-      const crypto = require("crypto");
-      random = (max) => crypto.randomInt(0, max);
+      const crypto2 = require("crypto");
+      random = (max) => crypto2.randomInt(0, max);
     } catch {
       random = (max) => Math.floor(Math.random(max));
     }
@@ -16339,9 +16339,9 @@ var require_connection = __commonJS({
     channels.open = diagnosticsChannel.channel("undici:websocket:open");
     channels.close = diagnosticsChannel.channel("undici:websocket:close");
     channels.socketError = diagnosticsChannel.channel("undici:websocket:socket_error");
-    var crypto;
+    var crypto2;
     try {
-      crypto = require("crypto");
+      crypto2 = require("crypto");
     } catch {
     }
     function establishWebSocketConnection(url, protocols, ws, onEstablish, options) {
@@ -16360,7 +16360,7 @@ var require_connection = __commonJS({
         const headersList = new Headers(options.headers)[kHeadersList];
         request2.headersList = headersList;
       }
-      const keyValue = crypto.randomBytes(16).toString("base64");
+      const keyValue = crypto2.randomBytes(16).toString("base64");
       request2.headersList.append("sec-websocket-key", keyValue);
       request2.headersList.append("sec-websocket-version", "13");
       for (const protocol of protocols) {
@@ -16389,7 +16389,7 @@ var require_connection = __commonJS({
             return;
           }
           const secWSAccept = response.headersList.get("Sec-WebSocket-Accept");
-          const digest = crypto.createHash("sha1").update(keyValue + uid).digest("base64");
+          const digest = crypto2.createHash("sha1").update(keyValue + uid).digest("base64");
           if (secWSAccept !== digest) {
             failWebsocketConnection(ws, "Incorrect hash received in Sec-WebSocket-Accept header.");
             return;
@@ -16469,9 +16469,9 @@ var require_frame = __commonJS({
   "../../node_modules/.pnpm/undici@5.29.0/node_modules/undici/lib/websocket/frame.js"(exports2, module2) {
     "use strict";
     var { maxUnsigned16Bit } = require_constants5();
-    var crypto;
+    var crypto2;
     try {
-      crypto = require("crypto");
+      crypto2 = require("crypto");
     } catch {
     }
     var WebsocketFrameSend = class {
@@ -16480,7 +16480,7 @@ var require_frame = __commonJS({
        */
       constructor(data) {
         this.frameData = data;
-        this.maskKey = crypto.randomBytes(4);
+        this.maskKey = crypto2.randomBytes(4);
       }
       createFrame(opcode) {
         const bodyLength = this.frameData?.byteLength ?? 0;
@@ -19691,7 +19691,7 @@ var require_core = __commonJS({
       process.env["PATH"] = `${inputPath}${path2.delimiter}${process.env["PATH"]}`;
     }
     exports2.addPath = addPath;
-    function getInput2(name, options) {
+    function getInput(name, options) {
       const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
       if (options && options.required && !val) {
         throw new Error(`Input required and not supplied: ${name}`);
@@ -19701,19 +19701,19 @@ var require_core = __commonJS({
       }
       return val.trim();
     }
-    exports2.getInput = getInput2;
+    exports2.getInput = getInput;
     function getMultilineInput(name, options) {
-      const inputs = getInput2(name, options).split("\n").filter((x) => x !== "");
+      const inputs = getInput(name, options).split("\n").filter((x) => x !== "");
       if (options && options.trimWhitespace === false) {
         return inputs;
       }
       return inputs.map((input) => input.trim());
     }
     exports2.getMultilineInput = getMultilineInput;
-    function getBooleanInput(name, options) {
+    function getBooleanInput2(name, options) {
       const trueValue = ["true", "True", "TRUE"];
       const falseValue = ["false", "False", "FALSE"];
-      const val = getInput2(name, options);
+      const val = getInput(name, options);
       if (trueValue.includes(val))
         return true;
       if (falseValue.includes(val))
@@ -19721,7 +19721,7 @@ var require_core = __commonJS({
       throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}
 Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
-    exports2.getBooleanInput = getBooleanInput;
+    exports2.getBooleanInput = getBooleanInput2;
     function setOutput2(name, value) {
       const filePath = process.env["GITHUB_OUTPUT"] || "";
       if (filePath) {
@@ -19735,11 +19735,11 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       (0, command_1.issue)("echo", enabled ? "on" : "off");
     }
     exports2.setCommandEcho = setCommandEcho;
-    function setFailed2(message) {
+    function setFailed(message) {
       process.exitCode = ExitCode.Failure;
       error(message);
     }
-    exports2.setFailed = setFailed2;
+    exports2.setFailed = setFailed;
     function isDebug() {
       return process.env["RUNNER_DEBUG"] === "1";
     }
@@ -23935,9 +23935,101 @@ var require_github = __commonJS({
   }
 });
 
-// src/main.ts
+// ../../packages/shared/dist/index.js
+var require_dist = __commonJS({
+  "../../packages/shared/dist/index.js"(exports2, module2) {
+    "use strict";
+    var __create2 = Object.create;
+    var __defProp2 = Object.defineProperty;
+    var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
+    var __getOwnPropNames2 = Object.getOwnPropertyNames;
+    var __getProtoOf2 = Object.getPrototypeOf;
+    var __hasOwnProp2 = Object.prototype.hasOwnProperty;
+    var __export2 = (target, all) => {
+      for (var name in all)
+        __defProp2(target, name, { get: all[name], enumerable: true });
+    };
+    var __copyProps2 = (to, from, except, desc) => {
+      if (from && typeof from === "object" || typeof from === "function") {
+        for (let key of __getOwnPropNames2(from))
+          if (!__hasOwnProp2.call(to, key) && key !== except)
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+      }
+      return to;
+    };
+    var __toESM2 = (mod, isNodeMode, target) => (target = mod != null ? __create2(__getProtoOf2(mod)) : {}, __copyProps2(
+      // If the importer is in node compatibility mode or this is not an ESM
+      // file that has been converted to a CommonJS file using a Babel-
+      // compatible transform (i.e. "__esModule" has not been set), then set
+      // "default" to the CommonJS "module.exports" for node compatibility.
+      isNodeMode || !mod || !mod.__esModule ? __defProp2(target, "default", { value: mod, enumerable: true }) : target,
+      mod
+    ));
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var index_exports = {};
+    __export2(index_exports, {
+      getGithubRunId: () => getGithubRunId,
+      getOptionalInput: () => getOptionalInput2,
+      getOrCreateRunId: () => getOrCreateRunId,
+      getRequiredInput: () => getRequiredInput2,
+      parseRepository: () => parseRepository,
+      runAction: () => runAction2
+    });
+    module2.exports = __toCommonJS2(index_exports);
+    var core7 = __toESM2(require_core());
+    function getOrCreateRunId() {
+      const existing = process.env.FERN_RUN_ID;
+      if (existing) {
+        core7.debug(`Inheriting FERN_RUN_ID from environment: ${existing}`);
+        return existing;
+      }
+      const runId = crypto.randomUUID();
+      core7.exportVariable("FERN_RUN_ID", runId);
+      core7.debug(`Generated new FERN_RUN_ID: ${runId}`);
+      return runId;
+    }
+    function getGithubRunId() {
+      return process.env.GITHUB_RUN_ID ?? "";
+    }
+    var core22 = __toESM2(require_core());
+    function getRequiredInput2(name) {
+      const value = core22.getInput(name, { required: true });
+      if (!value) {
+        throw new Error(`Input '${name}' is required but was not provided.`);
+      }
+      return value;
+    }
+    function getOptionalInput2(name) {
+      const value = core22.getInput(name);
+      return value || void 0;
+    }
+    async function runAction2(fn) {
+      try {
+        await fn();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        core22.setFailed(message);
+        process.exit(1);
+      }
+    }
+    function parseRepository(fullName) {
+      const parts = fullName.split("/");
+      if (parts.length !== 2 || !parts[0] || !parts[1]) {
+        throw new Error(`Invalid repository format '${fullName}'. Expected 'owner/repo'.`);
+      }
+      return {
+        owner: parts[0],
+        name: parts[1],
+        fullName
+      };
+    }
+  }
+});
+
+// src/index.ts
 var core6 = __toESM(require_core());
 var github2 = __toESM(require_github());
+var import_shared = __toESM(require_dist());
 
 // src/detect-groups.ts
 var fs = __toESM(require("fs"));
@@ -26710,6 +26802,19 @@ async function findExistingComment(octokit, owner, repo, prNumber) {
 function escapeTableCell(text) {
   return text.replace(/\|/g, "\\|");
 }
+function escapeMarkdown(text) {
+  return text.replace(/([\\`*_{}[\]()#+\-.!~>|])/g, "\\$1");
+}
+function sanitizeUrl(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === "https:") {
+      return parsed.href;
+    }
+  } catch {
+  }
+  return void 0;
+}
 function formatComment(results) {
   let rows = "";
   for (const result of results) {
@@ -26719,7 +26824,8 @@ function formatComment(results) {
       continue;
     }
     const installCell = result.installCommand ? `<code>${escapeTableCell(result.installCommand)}</code>` : "\u2014";
-    const diffCell = result.diffUrl ? `[View diff](${result.diffUrl})` : "\u2014";
+    const sanitizedDiffUrl = result.diffUrl ? sanitizeUrl(result.diffUrl) : void 0;
+    const diffCell = sanitizedDiffUrl ? `[View diff](${sanitizedDiffUrl})` : "\u2014";
     rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(result.packageName ?? "\u2014")} | ${installCell} | ${diffCell} |
 `;
   }
@@ -26728,7 +26834,7 @@ function formatComment(results) {
   if (errors.length > 0) {
     errorSection = "\n### Errors\n\n";
     for (const err of errors) {
-      errorSection += `**${err.groupName}**: ${err.error}
+      errorSection += `**${escapeMarkdown(err.groupName)}**: ${escapeMarkdown(err.error ?? "Unknown error")}
 
 `;
     }
@@ -26858,71 +26964,70 @@ function withTimeout(promise, ms, message) {
   });
 }
 
-// src/main.ts
-async function run() {
-  try {
-    const fernToken = core6.getInput("fern-token", { required: true });
-    const fernVersion = core6.getInput("fern-version") || "auto";
-    const githubToken = core6.getInput("github-token", { required: true });
-    const pushDiff = core6.getInput("push-diff") !== "false";
-    const fernRepoRef = core6.getInput("fern-repo-ref") || void 0;
-    await installFernCli(fernVersion, fernRepoRef);
-    const groups = detectPreviewGroups({ generators: "typescript" });
-    if (groups.length === 0) {
-      core6.info("No eligible generator groups found. Skipping preview.");
-      return;
+// src/index.ts
+function parseInputs() {
+  return {
+    fernToken: (0, import_shared.getRequiredInput)("fern-token"),
+    fernVersion: (0, import_shared.getOptionalInput)("fern-version") ?? "auto",
+    githubToken: (0, import_shared.getRequiredInput)("github-token"),
+    pushDiff: core6.getBooleanInput("push-diff"),
+    fernRepoRef: (0, import_shared.getOptionalInput)("fern-repo-ref")
+  };
+}
+async function run(inputs) {
+  await installFernCli(inputs.fernVersion, inputs.fernRepoRef);
+  const groups = detectPreviewGroups({ generators: "typescript" });
+  if (groups.length === 0) {
+    core6.info("No eligible generator groups found. Skipping preview.");
+    return;
+  }
+  core6.info(`Found ${groups.length} group(s): ${groups.map((g) => g.groupName).join(", ")}`);
+  const prNumber = github2.context.payload.pull_request?.number;
+  const results = [];
+  for (const group of groups) {
+    core6.startGroup(
+      `Preview: ${group.groupName}${group.apiName ? ` (api: ${group.apiName})` : ""}`
+    );
+    try {
+      const result = await runPreview({
+        groupName: group.groupName,
+        apiName: group.apiName,
+        fernToken: inputs.fernToken,
+        pushDiff: inputs.pushDiff
+      });
+      results.push(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      core6.warning(`Preview failed for group '${group.groupName}': ${message}`);
+      results.push({
+        status: "error",
+        groupName: group.groupName,
+        error: message
+      });
     }
-    core6.info(`Found ${groups.length} group(s): ${groups.map((g) => g.groupName).join(", ")}`);
-    const prNumber = github2.context.payload.pull_request?.number;
-    const results = [];
-    for (const group of groups) {
-      core6.startGroup(
-        `Preview: ${group.groupName}${group.apiName ? ` (api: ${group.apiName})` : ""}`
-      );
-      try {
-        const result = await runPreview({
-          groupName: group.groupName,
-          apiName: group.apiName,
-          fernToken,
-          pushDiff
-        });
-        results.push(result);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        core6.warning(`Preview failed for group '${group.groupName}': ${message}`);
-        results.push({
-          status: "error",
-          groupName: group.groupName,
-          error: message
-        });
-      }
-      core6.endGroup();
+    core6.endGroup();
+  }
+  if (prNumber != null) {
+    try {
+      await postOrUpdateComment({ results, prNumber, token: inputs.githubToken });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      core6.warning(`Failed to post PR comment: ${message}`);
     }
-    if (prNumber != null) {
-      try {
-        await postOrUpdateComment({ results, prNumber, token: githubToken });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        core6.warning(`Failed to post PR comment: ${message}`);
+  } else {
+    core6.info("Not a pull request event \u2014 skipping PR comment.");
+    for (const result of results) {
+      if (result.status === "success" && result.installCommand) {
+        core6.info(`${result.groupName}: ${result.installCommand}`);
       }
-    } else {
-      core6.info("Not a pull request event \u2014 skipping PR comment.");
-      for (const result of results) {
-        if (result.status === "success" && result.installCommand) {
-          core6.info(`${result.groupName}: ${result.installCommand}`);
-        }
-      }
-    }
-    core6.setOutput("results", JSON.stringify(results));
-  } catch (error) {
-    if (error instanceof Error) {
-      core6.setFailed(error.message);
-    } else {
-      core6.setFailed("An unknown error occurred");
     }
   }
+  core6.setOutput("results", JSON.stringify(results));
 }
-run();
+(0, import_shared.runAction)(async () => {
+  const inputs = parseInputs();
+  await run(inputs);
+});
 /*! Bundled license information:
 
 undici/lib/fetch/body.js:
