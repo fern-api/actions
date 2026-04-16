@@ -64,6 +64,11 @@ function escapeTableCell(text: string): string {
   return text.replace(/\|/g, "\\|");
 }
 
+/** Escape HTML special characters for content inside <code> tags. */
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 /** Escape markdown special characters in user-facing text to prevent injection. */
 function escapeMarkdown(text: string): string {
   return text.replace(/([\\`*_{}[\]()#+\-.!~>|])/g, "\\$1");
@@ -92,7 +97,7 @@ export function formatComment(results: PreviewResult[]): string {
     }
 
     const installCell = result.installCommand
-      ? `<code>${escapeTableCell(result.installCommand)}</code>`
+      ? `<code>${escapeHtml(result.installCommand)}</code>`
       : "—";
 
     const sanitizedDiffUrl = result.diffUrl ? sanitizeUrl(result.diffUrl) : undefined;

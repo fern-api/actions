@@ -123,6 +123,22 @@ describe("formatComment", () => {
     expect(comment).not.toContain("javascript:");
   });
 
+  it("escapes HTML special characters in install command", () => {
+    const results: PreviewResult[] = [
+      {
+        status: "success",
+        groupName: "ts-sdk",
+        packageName: "@acme-preview/sdk",
+        installCommand: "npm install @acme/<preview>/sdk@0.0.1",
+      },
+    ];
+
+    const comment = formatComment(results);
+    // Angle brackets should be entity-escaped inside <code> tags
+    expect(comment).toContain("&lt;preview&gt;");
+    expect(comment).not.toContain("<preview>");
+  });
+
   it("escapes markdown special characters in error messages", () => {
     const results: PreviewResult[] = [
       {

@@ -26802,6 +26802,9 @@ async function findExistingComment(octokit, owner, repo, prNumber) {
 function escapeTableCell(text) {
   return text.replace(/\|/g, "\\|");
 }
+function escapeHtml(text) {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
 function escapeMarkdown(text) {
   return text.replace(/([\\`*_{}[\]()#+\-.!~>|])/g, "\\$1");
 }
@@ -26823,7 +26826,7 @@ function formatComment(results) {
 `;
       continue;
     }
-    const installCell = result.installCommand ? `<code>${escapeTableCell(result.installCommand)}</code>` : "\u2014";
+    const installCell = result.installCommand ? `<code>${escapeHtml(result.installCommand)}</code>` : "\u2014";
     const sanitizedDiffUrl = result.diffUrl ? sanitizeUrl(result.diffUrl) : void 0;
     const diffCell = sanitizedDiffUrl ? `[View diff](${sanitizedDiffUrl})` : "\u2014";
     rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(result.packageName ?? "\u2014")} | ${installCell} | ${diffCell} |
