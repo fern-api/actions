@@ -17,6 +17,9 @@ inputs:
     description: "Push a preview diff branch to the SDK repo for comparison. Requires github config in generators.yml."
     required: false
     default: "true"
+  fern-repo-ref:
+    description: "Build CLI from source at this fern-api/fern git ref instead of installing from npm. For testing unreleased CLI changes."
+    required: false
 outputs:
   results:
     description: "JSON array of preview results (status, groupName, packageName, installCommand, version)"

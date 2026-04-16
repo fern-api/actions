@@ -11,9 +11,10 @@ async function run(): Promise<void> {
     const fernVersion = core.getInput("fern-version") || "latest";
     const githubToken = core.getInput("github-token", { required: true });
     const pushDiff = core.getInput("push-diff") !== "false";
+    const fernRepoRef = core.getInput("fern-repo-ref") || undefined;
 
     // 1. Install Fern CLI
-    await installFernCli(fernVersion);
+    await installFernCli(fernVersion, fernRepoRef);
 
     // 2. Detect generator groups eligible for preview
     const groups = detectPreviewGroups({ generators: "typescript" });

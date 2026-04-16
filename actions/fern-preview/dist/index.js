@@ -26611,12 +26611,44 @@ function findGeneratorsYml(fernDir) {
 }
 
 // src/install-fern.ts
+var import_node_fs = require("fs");
 var core3 = __toESM(require_core());
 var exec = __toESM(require_exec());
-async function installFernCli(version) {
+async function installFernCli(version, repoRef) {
+  if (repoRef) {
+    await installFromSource(repoRef);
+    return;
+  }
   const pkg = version === "latest" ? "fern-api" : `fern-api@${version}`;
   core3.info(`Installing Fern CLI: ${pkg}`);
   await exec.exec("npm", ["install", "-g", pkg]);
+  await verifyInstallation();
+}
+async function installFromSource(ref) {
+  core3.info(`Building Fern CLI from source (ref: ${ref})`);
+  const buildDir = "/tmp/fern-cli-build";
+  await exec.exec("git", [
+    "clone",
+    "--branch",
+    ref,
+    "--depth",
+    "1",
+    "https://github.com/fern-api/fern.git",
+    buildDir
+  ]);
+  await exec.exec("npm", ["install", "-g", "pnpm@9.4.0"]);
+  await exec.exec("pnpm", ["install", "--frozen-lockfile"], { cwd: buildDir });
+  await exec.exec("pnpm", ["turbo", "run", "dist:cli:prod", "--filter", "@fern-api/cli"], {
+    cwd: buildDir
+  });
+  const cliPath = `${buildDir}/packages/cli/cli/dist/prod/cli.cjs`;
+  const wrapperPath = "/usr/local/bin/fern";
+  (0, import_node_fs.writeFileSync)(wrapperPath, `#!/usr/bin/env node
+require("${cliPath}");
+`, { mode: 493 });
+  await verifyInstallation();
+}
+async function verifyInstallation() {
   let installedVersion = "";
   await exec.exec("fern", ["--version"], {
     env: { ...process.env, FERN_NO_VERSION_REDIRECTION: "true" },
@@ -26834,7 +26866,8 @@ async function run() {
     const fernVersion = core6.getInput("fern-version") || "latest";
     const githubToken = core6.getInput("github-token", { required: true });
     const pushDiff = core6.getInput("push-diff") !== "false";
-    await installFernCli(fernVersion);
+    const fernRepoRef = core6.getInput("fern-repo-ref") || void 0;
+    await installFernCli(fernVersion, fernRepoRef);
     const groups = detectPreviewGroups({ generators: "typescript" });
     if (groups.length === 0) {
       core6.info("No eligible generator groups found. Skipping preview.");
