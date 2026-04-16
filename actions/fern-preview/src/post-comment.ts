@@ -103,7 +103,7 @@ export function formatComment(results: PreviewResult[]): string {
     const sanitizedDiffUrl = result.diffUrl ? sanitizeUrl(result.diffUrl) : undefined;
     const diffCell = sanitizedDiffUrl ? `[View diff](${sanitizedDiffUrl})` : "—";
 
-    rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(result.packageName ?? "—")} | ${installCell} | ${diffCell} |\n`;
+    rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(result.packageName ?? "—")} | ${escapeTableCell(installCell)} | ${escapeTableCell(diffCell)} |\n`;
   }
 
   // Append error details at the bottom

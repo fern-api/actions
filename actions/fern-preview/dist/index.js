@@ -26829,7 +26829,7 @@ function formatComment(results) {
     const installCell = result.installCommand ? `<code>${escapeHtml(result.installCommand)}</code>` : "\u2014";
     const sanitizedDiffUrl = result.diffUrl ? sanitizeUrl(result.diffUrl) : void 0;
     const diffCell = sanitizedDiffUrl ? `[View diff](${sanitizedDiffUrl})` : "\u2014";
-    rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(result.packageName ?? "\u2014")} | ${installCell} | ${diffCell} |
+    rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(result.packageName ?? "\u2014")} | ${escapeTableCell(installCell)} | ${escapeTableCell(diffCell)} |
 `;
   }
   const errors = results.filter((r) => r.status === "error" && r.error);
