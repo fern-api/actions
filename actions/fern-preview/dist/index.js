@@ -26619,7 +26619,7 @@ async function installFernCli(version, repoRef) {
     await installFromSource(repoRef);
     return;
   }
-  const pkg = version === "latest" ? "fern-api" : `fern-api@${version}`;
+  const pkg = version === "latest" || version === "auto" ? "fern-api" : `fern-api@${version}`;
   core3.info(`Installing Fern CLI: ${pkg}`);
   await exec.exec("npm", ["install", "-g", pkg]);
   await verifyInstallation();
@@ -26863,7 +26863,7 @@ function withTimeout(promise, ms, message) {
 async function run() {
   try {
     const fernToken = core6.getInput("fern-token", { required: true });
-    const fernVersion = core6.getInput("fern-version") || "latest";
+    const fernVersion = core6.getInput("fern-version") || "auto";
     const githubToken = core6.getInput("github-token", { required: true });
     const pushDiff = core6.getInput("push-diff") !== "false";
     const fernRepoRef = core6.getInput("fern-repo-ref") || void 0;

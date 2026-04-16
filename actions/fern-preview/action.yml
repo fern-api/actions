@@ -6,9 +6,9 @@ inputs:
     description: "Fern authentication token (FERN_TOKEN)"
     required: true
   fern-version:
-    description: "Fern CLI version to install (e.g. 'latest', '3.98.5')"
+    description: "Fern CLI version to install. 'auto' (default) respects the version pinned in fern.config.json. Use 'latest' for the newest release, or pin to a specific version (e.g. '3.98.5')."
     required: false
-    default: "latest"
+    default: "auto"
   github-token:
     description: "GitHub token for posting PR comments. Defaults to the built-in GITHUB_TOKEN."
     required: false

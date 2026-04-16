@@ -8,7 +8,7 @@ import { type PreviewResult, runPreview } from "./run-preview.js";
 async function run(): Promise<void> {
   try {
     const fernToken = core.getInput("fern-token", { required: true });
-    const fernVersion = core.getInput("fern-version") || "latest";
+    const fernVersion = core.getInput("fern-version") || "auto";
     const githubToken = core.getInput("github-token", { required: true });
     const pushDiff = core.getInput("push-diff") !== "false";
     const fernRepoRef = core.getInput("fern-repo-ref") || undefined;

@@ -8,7 +8,7 @@ export async function installFernCli(version: string, repoRef?: string): Promise
     return;
   }
 
-  const pkg = version === "latest" ? "fern-api" : `fern-api@${version}`;
+  const pkg = version === "latest" || version === "auto" ? "fern-api" : `fern-api@${version}`;
   core.info(`Installing Fern CLI: ${pkg}`);
   await exec.exec("npm", ["install", "-g", pkg]);
 
