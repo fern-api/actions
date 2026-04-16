@@ -32,7 +32,7 @@ async function installFromSource(ref: string): Promise<void> {
   ]);
 
   // Install pnpm globally (corepack enable can be unreliable on some runners)
-  await exec.exec("npm", ["install", "-g", "pnpm@9.4.0"]);
+  await exec.exec("npm", ["install", "-g", "pnpm"]);
 
   // Install dependencies
   await exec.exec("pnpm", ["install", "--frozen-lockfile"], { cwd: buildDir });

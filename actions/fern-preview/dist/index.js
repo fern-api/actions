@@ -26636,7 +26636,7 @@ async function installFromSource(ref) {
     "https://github.com/fern-api/fern.git",
     buildDir
   ]);
-  await exec.exec("npm", ["install", "-g", "pnpm@9.4.0"]);
+  await exec.exec("npm", ["install", "-g", "pnpm"]);
   await exec.exec("pnpm", ["install", "--frozen-lockfile"], { cwd: buildDir });
   await exec.exec("pnpm", ["turbo", "run", "dist:cli:prod", "--filter", "@fern-api/cli"], {
     cwd: buildDir
