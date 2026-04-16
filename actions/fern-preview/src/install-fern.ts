@@ -1,4 +1,6 @@
-import { writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import * as core from "@actions/core";
 import * as exec from "@actions/exec";
 
@@ -18,7 +20,7 @@ export async function installFernCli(version: string, repoRef?: string): Promise
 async function installFromSource(ref: string): Promise<void> {
   core.info(`Building Fern CLI from source (ref: ${ref})`);
 
-  const buildDir = "/tmp/fern-cli-build";
+  const buildDir = mkdtempSync(path.join(os.tmpdir(), "fern-cli-build-"));
 
   // Clone the repo at the specified ref (shallow clone for speed)
   await exec.exec("git", [

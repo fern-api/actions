@@ -60,12 +60,12 @@ export function detectPreviewGroups({
       if (groupObj == null) {
         continue;
       }
-      const generators = groupObj.generators as Array<Record<string, unknown>> | undefined;
-      if (!generators) {
+      const groupGenerators = groupObj.generators as Array<Record<string, unknown>> | undefined;
+      if (!groupGenerators) {
         continue;
       }
 
-      for (const gen of generators) {
+      for (const gen of groupGenerators) {
         const name = gen.name as string;
         if (patterns.some((p) => p?.test(name))) {
           results.push({
