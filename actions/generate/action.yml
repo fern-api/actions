@@ -1,31 +1,90 @@
-name: "generate"
-description: "[ALPHA] Runs fern generate on push to main and opens SDK PRs in SDK repos"
+name: "Fern Generate"
+description: "Run fern generate to create SDK PRs — discovers generators via the CLI and runs each one."
 author: "Fern"
 
 inputs:
-  version:
-    description: "Fern CLI version to use. 'auto' respects fern.config.json and falls back to latest, 'latest' always uses the newest release, 'inherit' uses the bootstrapped binary as-is, or pin to a specific version (e.g. '0.15.0')."
-    required: false
-    default: "auto"
   fern-token:
-    description: "Fern token for API access and SDK repo PR creation"
+    description: "FERN_TOKEN for authentication"
     required: true
   auto-merge:
-    description: "Automatically enable GitHub automerge on opened SDK PRs (disabled if breaking changes detected)"
+    description: "Enable automerge on non-breaking PRs"
     required: false
     default: "true"
-  reviewers:
-    description: "GitHub teams or users to tag on failure issues (newline-separated)"
+  group:
+    description: "Filter to a specific generator group"
     required: false
+  version:
+    description: "Version strategy for generated packages"
+    required: false
+    default: "AUTO"
+  dry-run:
+    description: "When true, only discover generators and output the commands without running them"
+    required: false
+    default: "false"
 
 outputs:
-  run-id:
-    description: "UUIDv4 for this generation run"
-  prs-created:
-    description: "JSON array of {generator, repo, pr_url} for each SDK PR opened"
-  generators-failed:
-    description: "JSON array of {generator, error} for each failed generator"
+  commands:
+    description: "JSON array of fern automations generate commands (one per generator). Use with fromJson() for matrix fan-out."
+    value: ${{ steps.list.outputs.commands }}
 
 runs:
-  using: "node20"
-  main: "dist/index.js"
+  using: composite
+  steps:
+    - name: Resolve Fern CLI
+      id: cli
+      uses: fern-api/actions/resolve-cli@main
+      with:
+        version: latest
+
+    - name: Discover generators
+      id: list
+      shell: bash
+      env:
+        FERN_TOKEN: ${{ inputs.fern-token }}
+        GROUP: ${{ inputs.group }}
+        VERSION: ${{ inputs.version }}
+        AUTO_MERGE: ${{ inputs.auto-merge }}
+      run: |
+        ARGS=()
+        [ -n "$GROUP" ] && ARGS+=(--group "$GROUP")
+        [ -n "$VERSION" ] && ARGS+=(--version "$VERSION")
+        [ "$AUTO_MERGE" = "true" ] && ARGS+=(--auto-merge)
+
+        COMMANDS=$(${{ steps.cli.outputs.fern-cmd }} automations list generate "${ARGS[@]}")
+        echo "commands=$COMMANDS" >> "$GITHUB_OUTPUT"
+        echo "Discovered commands: $COMMANDS"
+
+    - name: Run generators
+      if: inputs.dry-run != 'true'
+      shell: bash
+      env:
+        FERN_TOKEN: ${{ inputs.fern-token }}
+        COMMANDS: ${{ steps.list.outputs.commands }}
+      run: |
+        TOTAL=$(echo "$COMMANDS" | jq 'length')
+        echo "Running $TOTAL generator command(s)..."
+
+        FAILED=0
+        for i in $(seq 0 $(( TOTAL - 1 ))); do
+          CMD=$(echo "$COMMANDS" | jq -r ".[$i]")
+          echo "::group::Generator $i"
+          echo "Running: $CMD"
+
+          export FERN_RUN_ID="${{ github.run_id }}-${i}"
+          if eval "${{ steps.cli.outputs.fern-cmd }} $CMD"; then
+            echo "Generator $i succeeded"
+          else
+            echo "::error::Generator $i failed"
+            FAILED=$((FAILED + 1))
+          fi
+          echo "::endgroup::"
+        done
+
+        if [ "$FAILED" -gt 0 ]; then
+          echo "::error::$FAILED generator(s) failed"
+          exit 1
+        fi
+
+branding:
+  icon: "package"
+  color: "green"

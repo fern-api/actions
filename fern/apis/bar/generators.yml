@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=https://schema.buildwithfern.dev/generators-yml.json
+groups:
+  ts-sdk:
+    generators:
+      - name: fern-typescript-sdk
+        output:
+          location: npm
+          package-name: "@fern-api/autorelease-demo"
+          token: OIDC
+        github:
+          repository: fern-demo/autorelease-demo-ts-push-niels
+          license: MIT
+          mode: push
+          branch: main
+        config:
+          namespaceExport: Demo
+        version: 3.48.0
+      - name: fern-typescript-sdk
+        output:
+          location: npm
+          package-name: "@fern-api/autorelease-demo"
+          token: OIDC
+        github:
+          repository: fern-demo/autorelease-demo-ts-pull-request-niels
+          license: MIT
+          mode: pull-request
+          branch: main
+        config:
+          namespaceExport: Demo
+        version: 3.48.0
+      - name: fern-typescript-sdk
+        output:
+          location: npm
+          package-name: "@fern-api/autorelease-demo"
+          token: OIDC
+        github:
+          repository: fern-demo/autorelease-demo-ts-commit-release-niels
+        config:
+          namespaceExport: Demo
+        version: 3.48.0
+  python-sdk:
+    generators:
+      - name: fernapi/fern-python-sdk
+        version: 4.38.1
+        output:
+          location: pypi
+          package-name: demo
+          # uncomment to publish to registry
+          token: ${PYPI_TOKEN}
+        github:
+          repository: fern-demo/autopilot-python-sdk-niels
+          mode: pull-request
+        smart-casing: false
+  go-sdk:
+    generators:
+      - name: fernapi/fern-go-sdk
+        version: 1.18.0
+        github:
+          repository: fern-demo/autopilot-sdk-go-niels
+          mode: pull-request
+        config:
+          clientName: TestClient
