@@ -37,7 +37,7 @@ runs:
       id: cli
       uses: fern-api/actions/actions/resolve-cli@main
       with:
-        version: latest
+        version: auto
 
     - name: Discover generators
       id: list
