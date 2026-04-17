@@ -1,0 +1,22 @@
+name: Verify Fern Token
+description: "Fails fast if FERN_TOKEN is not set. Use at the top of actions that require authentication."
+author: "Fern"
+
+inputs:
+  fern-token:
+    description: "FERN_TOKEN to verify"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Check token presence
+      shell: bash
+      env:
+        FERN_TOKEN: ${{ inputs.fern-token }}
+      run: |
+        if [ -z "$FERN_TOKEN" ]; then
+          echo "::error::FERN_TOKEN is not set. Add it as a repository secret: Settings → Secrets and variables → Actions → New repository secret. Then reference it in your workflow: fern-token: \${{ secrets.FERN_TOKEN }}"
+          exit 1
+        fi
+        echo "FERN_TOKEN is set."

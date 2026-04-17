@@ -33,6 +33,11 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Verify Fern token
+      uses: fern-api/actions/actions/verify-token@main
+      with:
+        fern-token: ${{ inputs.fern-token }}
+
     - name: Resolve Fern CLI
       id: cli
       uses: fern-api/actions/actions/resolve-cli@main
