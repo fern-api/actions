@@ -71,7 +71,10 @@ runs:
 
         FAILED=0
         for i in $(seq 0 $(( TOTAL - 1 ))); do
-          CMD=$(echo "$COMMANDS" | jq -r ".[$i]")
+          # Strip leading "fern " — the CLI emits commands as "fern automations generate ..."
+          # but we already invoke fern via fern-cmd (e.g. "npx fern-api@latest"), so passing
+          # the prefix through would produce "npx fern-api@latest fern automations generate ..."
+          CMD=$(echo "$COMMANDS" | jq -r ".[$i]" | sed 's/^fern //')
           echo "::group::Generator $i"
           echo "Running: $CMD"
 
