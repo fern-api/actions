@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: generate
-        uses: fern-api/actions/actions/generate@main
+        uses: fern-api/actions/actions/generate@niels/generate
         with:
           fern-token: ${{ secrets.fern-token }}
           dry-run: true
@@ -53,10 +53,10 @@ jobs:
         command: ${{ fromJson(needs.discover.outputs.commands) }}
     steps:
       - uses: actions/checkout@v4
-      - uses: fern-api/actions/actions/verify-token@main
+      - uses: fern-api/actions/actions/verify-token@niels/generate
         with:
           fern-token: ${{ secrets.fern-token }}
-      - uses: fern-api/actions/actions/resolve-cli@main
+      - uses: fern-api/actions/actions/resolve-cli@niels/generate
         id: cli
         with:
           version: auto
