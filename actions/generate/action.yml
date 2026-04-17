@@ -13,12 +13,15 @@ inputs:
   group:
     description: "Filter to a specific generator group"
     required: false
+  api:
+    description: "Filter to a specific API in a multi-API repo (e.g. 'foo' for fern/apis/foo/)"
+    required: false
   version:
     description: "Version strategy for generated packages"
     required: false
     default: "AUTO"
   dry-run:
-    description: "When true, only discover generators and output the commands without running them"
+    description: "Dry run"
     required: false
     default: "false"
 
@@ -32,7 +35,7 @@ runs:
   steps:
     - name: Resolve Fern CLI
       id: cli
-      uses: fern-api/actions/resolve-cli@main
+      uses: fern-api/actions/actions/resolve-cli@main
       with:
         version: latest
 
@@ -42,11 +45,13 @@ runs:
       env:
         FERN_TOKEN: ${{ inputs.fern-token }}
         GROUP: ${{ inputs.group }}
+        API: ${{ inputs.api }}
         VERSION: ${{ inputs.version }}
         AUTO_MERGE: ${{ inputs.auto-merge }}
       run: |
         ARGS=()
         [ -n "$GROUP" ] && ARGS+=(--group "$GROUP")
+        [ -n "$API" ] && ARGS+=(--api "$API")
         [ -n "$VERSION" ] && ARGS+=(--version "$VERSION")
         [ "$AUTO_MERGE" = "true" ] && ARGS+=(--auto-merge)
 
