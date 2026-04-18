@@ -27,9 +27,21 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Resolve CLI version
+      id: cli-version
+      shell: bash
+      run: |
+        VERSION="${{ inputs.fern-version }}"
+        # Normalize 'auto' to 'latest' for setup-cli. The CLI handles
+        # version redirection at runtime via fern.config.json.
+        if [ "$VERSION" = "auto" ]; then
+          VERSION="latest"
+        fi
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
     - uses: fern-api/actions/setup-cli@main
       with:
-        version: ${{ inputs.fern-version }}
+        version: ${{ steps.cli-version.outputs.version }}
         repo-ref: ${{ inputs.fern-repo-ref }}
 
     - name: Run preview
