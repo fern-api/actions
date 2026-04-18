@@ -7,7 +7,7 @@ fern-api/actions/
 ├── actions/
 │   ├── setup-cli/          # Composite action — action.yml + README only
 │   ├── sync-openapi/       # Node.js action — TypeScript, built to dist/
-│   ├── fern-preview/       # Node.js action — SDK preview diffs on PRs
+│   ├── fern-preview/       # Composite action — delegates CLI install to setup-cli, runs JS for preview logic
 │   ├── generate/           # Node.js action — ALPHA
 │   ├── upgrade/            # Node.js action — ALPHA
 │   ├── verify/             # Node.js action — ALPHA

@@ -23,9 +23,24 @@ inputs:
 outputs:
   results:
     description: "JSON array of preview results (status, groupName, packageName, installCommand, version)"
+    value: ${{ steps.preview.outputs.results }}
 runs:
-  using: "node20"
-  main: "dist/index.js"
+  using: "composite"
+  steps:
+    - uses: fern-api/actions/setup-cli@main
+      with:
+        version: ${{ inputs.fern-version }}
+        repo-ref: ${{ inputs.fern-repo-ref }}
+
+    - name: Run preview
+      id: preview
+      shell: bash
+      run: node ${{ github.action_path }}/dist/index.js
+      env:
+        INPUT_FERN-TOKEN: ${{ inputs.fern-token }}
+        INPUT_GITHUB-TOKEN: ${{ inputs.github-token }}
+        INPUT_PUSH-DIFF: ${{ inputs.push-diff }}
+        INPUT_FERN-VERSION: ${{ inputs.fern-version }}
 branding:
   icon: "package"
   color: "green"
