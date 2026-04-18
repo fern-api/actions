@@ -1,5 +1,5 @@
 name: Setup Fern CLI
-description: "Install the Fern CLI in your GitHub Actions workflow. Requires Node.js and npm — add actions/setup-node before this step if your runner doesn't include them."
+description: "Install the Fern CLI globally in your GitHub Actions workflow. Requires Node.js and npm — add actions/setup-node before this step if your runner doesn't include them."
 author: "Fern"
 
 branding:
@@ -8,7 +8,7 @@ branding:
 
 inputs:
   version:
-    description: "Fern CLI version to install. 'latest' or 'auto' installs the newest release; pin to a specific version (e.g. '0.15.0') for reproducible builds. When using 'auto', the CLI self-redirects to the version pinned in fern.config.json at runtime."
+    description: "Fern CLI version to install globally. Use 'latest' or 'auto' to get the newest release, or pin to a specific version or npm tag (e.g. '0.15.0', 'beta'). When using 'auto', the CLI self-redirects to the version pinned in fern.config.json at runtime."
     required: false
     default: "latest"
   repo-ref:
@@ -43,11 +43,11 @@ runs:
         REPO_REF: ${{ inputs.repo-ref }}
       run: |
         if ! command -v npm &>/dev/null; then
-          echo "Error: npm is not available. Please add a Node.js setup step before this action."
+          echo "::error::npm is not available. Please add a Node.js setup step before this action."
           exit 1
         fi
         if ! command -v node &>/dev/null; then
-          echo "Error: node is not available. Please add a Node.js setup step before this action."
+          echo "::error::node is not available. Please add a Node.js setup step before this action."
           exit 1
         fi
 

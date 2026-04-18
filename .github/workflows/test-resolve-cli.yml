@@ -1,0 +1,75 @@
+name: Test resolve-cli
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-resolve-cli:
+    name: "resolve-cli (${{ matrix.version }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - version: auto
+            expected-fern-cmd: "npx --yes fern-api@latest"
+            expect-no-version-redirection: "false"
+          - version: latest
+            expected-fern-cmd: "npx --yes fern-api@latest"
+            expect-no-version-redirection: "true"
+          - version: "0.46.10"
+            expected-fern-cmd: "npx --yes fern-api@0.46.10"
+            expect-no-version-redirection: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve CLI
+        id: cli
+        uses: ./actions/resolve-cli
+        with:
+          version: ${{ matrix.version }}
+
+      - name: Assert fern-cmd
+        shell: bash
+        run: |
+          actual="${{ steps.cli.outputs.fern-cmd }}"
+          expected="${{ matrix.expected-fern-cmd }}"
+          if [[ "$actual" != "$expected" ]]; then
+            echo "::error::fern-cmd mismatch: expected '$expected', got '$actual'"
+            exit 1
+          fi
+          echo "fern-cmd OK: $actual"
+
+      - name: Assert FERN_NO_VERSION_REDIRECTION
+        shell: bash
+        run: |
+          expect="${{ matrix.expect-no-version-redirection }}"
+          if [[ "$expect" == "true" ]]; then
+            if [[ -z "${FERN_NO_VERSION_REDIRECTION:-}" ]]; then
+              echo "::error::FERN_NO_VERSION_REDIRECTION should be set but is not"
+              exit 1
+            fi
+            echo "FERN_NO_VERSION_REDIRECTION OK: set to '${FERN_NO_VERSION_REDIRECTION}'"
+          else
+            if [[ -n "${FERN_NO_VERSION_REDIRECTION:-}" ]]; then
+              echo "::error::FERN_NO_VERSION_REDIRECTION should NOT be set but is '${FERN_NO_VERSION_REDIRECTION}'"
+              exit 1
+            fi
+            echo "FERN_NO_VERSION_REDIRECTION OK: not set"
+          fi
+
+      - name: Assert FERN_RUN_ID
+        shell: bash
+        run: |
+          if [[ -z "${FERN_RUN_ID:-}" ]]; then
+            echo "::error::FERN_RUN_ID is not set"
+            exit 1
+          fi
+          echo "FERN_RUN_ID OK: ${FERN_RUN_ID}"

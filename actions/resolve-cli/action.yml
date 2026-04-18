@@ -1,0 +1,55 @@
+name: Resolve Fern CLI
+description: "Resolves the Fern CLI command based on the requested version. Outputs a fern-cmd string to use in subsequent steps."
+author: "Fern"
+
+inputs:
+  version:
+    description: "Fern CLI version to use. 'auto' respects fern.config.json and falls back to latest, 'latest' always uses the newest release, 'inherit' uses whatever CLI is already on PATH, or pin to a specific version or npm tag (e.g. '0.15.0', 'beta')."
+    required: false
+    default: "auto"
+
+outputs:
+  fern-cmd:
+    description: "The resolved fern command to use in subsequent steps."
+    value: ${{ steps.resolve.outputs.fern-cmd }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set FERN_RUN_ID
+      shell: bash
+      run: |
+        if [ -z "${FERN_RUN_ID}" ]; then
+          FERN_RUN_ID=$(node -e "console.log(require('crypto').randomUUID())")
+          echo "FERN_RUN_ID=${FERN_RUN_ID}" >> "$GITHUB_ENV"
+          echo "Generated new FERN_RUN_ID: ${FERN_RUN_ID}"
+        else
+          echo "Inheriting existing FERN_RUN_ID: ${FERN_RUN_ID}"
+        fi
+
+    - name: Resolve Fern CLI version
+      id: resolve
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        #   auto    → npx fern-api@latest (let CLI resolve from fern.config.json)
+        #   latest  → npx fern-api@latest with FERN_NO_VERSION_REDIRECTION
+        #   inherit → bare `fern` from PATH with FERN_NO_VERSION_REDIRECTION
+        #   <other> → npx fern-api@<version> with FERN_NO_VERSION_REDIRECTION
+        if [ "$VERSION" = "auto" ]; then
+          FERN_CMD="npx --yes fern-api@latest"
+        elif [ "$VERSION" = "inherit" ]; then
+          if ! command -v fern &>/dev/null; then
+            echo "::error::version is 'inherit' but fern is not on PATH."
+            exit 1
+          fi
+          FERN_CMD="fern"
+          echo "FERN_NO_VERSION_REDIRECTION=true" >> "$GITHUB_ENV"
+        else
+          FERN_CMD="npx --yes fern-api@$VERSION"
+          echo "FERN_NO_VERSION_REDIRECTION=true" >> "$GITHUB_ENV"
+        fi
+
+        echo "fern-cmd=$FERN_CMD" >> "$GITHUB_OUTPUT"
+        echo "Resolved fern command: $FERN_CMD"
