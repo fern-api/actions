@@ -44,18 +44,13 @@ interface AutomationsPreviewJson {
 export async function runAutomationsPreview({
   fernToken,
   pushDiff,
-  groupFilter,
 }: {
   fernToken: string;
   pushDiff: boolean;
-  groupFilter?: string;
 }): Promise<PreviewResult[]> {
   const args = ["automations", "preview", "--json"];
   if (pushDiff) {
     args.push("--push-diff");
-  }
-  if (groupFilter) {
-    args.push("--group", groupFilter);
   }
 
   let stdout = "";

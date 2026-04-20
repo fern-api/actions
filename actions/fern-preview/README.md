@@ -4,11 +4,10 @@ A GitHub Action that publishes preview SDK packages and posts PR comments with i
 
 ## What it does
 
-1. **Detects** all TypeScript generator groups in your `fern/` directory
-2. **Runs** `fern sdk preview` for each group — routes through Fiddle for remote generation
-3. **Posts** a PR comment with install commands and diff links
+1. **Calls** `fern automations preview --json` — the CLI discovers all eligible TypeScript generator groups and runs SDK preview for each one
+2. **Posts** a PR comment with install commands and diff links
 
-All heavy lifting (npm publishing, diff branch pushing to SDK repos) happens server-side in Fiddle, matching how `fern generate` works. No Docker or cross-repo GitHub tokens needed on the runner.
+All heavy lifting (group detection, npm publishing, diff branch pushing to SDK repos) happens in the Fern CLI and Fiddle, matching how `fern generate` works. No Docker or cross-repo GitHub tokens needed on the runner.
 
 ## Usage
 
@@ -60,6 +59,16 @@ The action posts (or updates) a single comment on the PR:
 - `fern-typescript-browser-sdk`
 
 (With or without the `fernapi/` prefix)
+
+## Architecture
+
+The action is a thin wrapper around the Fern CLI:
+
+1. **setup-cli** installs the Fern CLI at the requested version
+2. **`fern automations preview --json --push-diff`** handles both group detection and SDK preview execution
+3. The action parses the aggregated JSON results and posts a PR comment
+
+Group detection (which generators are previewable) and preview execution are owned by the CLI, so the action doesn't need to parse `generators.yml` or know about generator types.
 
 ## Notes
 

@@ -31,15 +31,18 @@ runs:
       id: cli-version
       shell: bash
       run: |
-        VERSION="${{ inputs.fern-version }}"
+        VERSION="$FERN_VERSION_INPUT"
         # Normalize 'auto' to 'latest' for setup-cli. The CLI handles
         # version redirection at runtime via fern.config.json.
         if [ "$VERSION" = "auto" ]; then
           VERSION="latest"
         fi
         echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      env:
+        FERN_VERSION_INPUT: ${{ inputs.fern-version }}
 
-    - uses: fern-api/actions/setup-cli@main
+    # TODO: pin to a release tag once setup-cli has one (e.g. setup-cli@v1)
+    - uses: fern-api/actions/setup-cli@f5696be181b71b00b61a8816e9b06cc176f569b8
       with:
         version: ${{ steps.cli-version.outputs.version }}
         repo-ref: ${{ inputs.fern-repo-ref }}
