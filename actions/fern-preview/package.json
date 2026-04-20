@@ -13,11 +13,9 @@
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.1",
     "@actions/github": "^6.0.1",
-    "@fern-github-actions/shared": "workspace:*",
-    "js-yaml": "^4.1.1"
+    "@fern-github-actions/shared": "workspace:*"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.5",
     "@types/node": "^20.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.5.0",
