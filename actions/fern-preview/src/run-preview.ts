@@ -48,6 +48,8 @@ export async function runAutomationsPreview({
   fernToken: string;
   pushDiff: boolean;
 }): Promise<PreviewResult[]> {
+  core.setSecret(fernToken);
+
   const args = ["automations", "preview", "--json"];
   if (pushDiff) {
     args.push("--push-diff");
@@ -85,7 +87,7 @@ export async function runAutomationsPreview({
       {
         status: "error",
         groupName: "unknown",
-        error: (stderr.trim() || `Exit code ${exitCode}`).slice(0, 500),
+        error: truncate(stderr.trim() || `Exit code ${exitCode}`, 500),
       },
     ];
   }
@@ -167,6 +169,13 @@ export function extractAutomationsJson(output: string): AutomationsPreviewJson |
   }
 
   return undefined;
+}
+
+function truncate(text: string, maxLength: number): string {
+  if (text.length <= maxLength) {
+    return text;
+  }
+  return `${text.slice(0, maxLength)} [truncated]`;
 }
 
 // Note: withTimeout rejects the wrapping promise on timeout but does NOT kill the
