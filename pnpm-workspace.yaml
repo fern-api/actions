@@ -1,3 +1,5 @@
 packages:
-  - "actions/*"
+  - "example-action"
+  - "upgrade"
+  - "verify"
   - "packages/*"

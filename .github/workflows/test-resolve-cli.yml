@@ -32,7 +32,7 @@ jobs:
 
       - name: Resolve CLI
         id: cli
-        uses: ./actions/resolve-cli
+        uses: ./resolve-cli
         with:
           version: ${{ matrix.version }}
 
