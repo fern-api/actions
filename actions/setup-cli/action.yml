@@ -55,7 +55,8 @@ runs:
           echo "Building Fern CLI from source (ref: $REPO_REF)"
           BUILD_DIR=$(mktemp -d "${TMPDIR:-/tmp}/fern-cli-build-XXXXXX")
           git clone --branch "$REPO_REF" --depth 1 https://github.com/fern-api/fern.git "$BUILD_DIR"
-          npm install -g pnpm
+          corepack enable
+          (cd "$BUILD_DIR" && corepack prepare --activate)
           (cd "$BUILD_DIR" && pnpm install --frozen-lockfile)
           (cd "$BUILD_DIR" && pnpm turbo run dist:cli:prod --filter @fern-api/cli)
           CLI_PATH="$BUILD_DIR/packages/cli/cli/dist/prod/cli.cjs"

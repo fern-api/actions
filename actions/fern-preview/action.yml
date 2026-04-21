@@ -55,7 +55,6 @@ runs:
         INPUT_FERN-TOKEN: ${{ inputs.fern-token }}
         INPUT_GITHUB-TOKEN: ${{ inputs.github-token }}
         INPUT_PUSH-DIFF: ${{ inputs.push-diff }}
-        INPUT_FERN-VERSION: ${{ inputs.fern-version }}
 branding:
   icon: "package"
   color: "green"
