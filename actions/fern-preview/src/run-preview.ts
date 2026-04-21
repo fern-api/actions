@@ -75,12 +75,7 @@ export async function runAutomationsPreview({
   // stderr instead. Try stdout first, then fall back to stderr.
   const parsed = extractAutomationsJson(stdout) ?? extractAutomationsJson(stderr);
   if (!parsed) {
-    // Log the full error to the runner logs (where core.setSecret masks tokens),
-    // but never post raw CLI output to the PR comment — it could contain secrets.
     core.warning(`Failed to parse automations preview output (exit code ${exitCode})`);
-    if (stderr.trim()) {
-      core.warning(stderr.trim());
-    }
     return [
       {
         status: "error",
@@ -92,11 +87,6 @@ export async function runAutomationsPreview({
 
   return parsed.results.map((result): PreviewResult => {
     if (result.status === "error") {
-      // Log the raw error to runner logs (masked by core.setSecret), but use a
-      // generic message for the PR comment to avoid leaking secrets.
-      if (result.error) {
-        core.warning(`${result.groupName}: ${result.error}`);
-      }
       return {
         status: "error",
         groupName: result.groupName,

@@ -24189,9 +24189,6 @@ async function runAutomationsPreview({
   const parsed = extractAutomationsJson(stdout) ?? extractAutomationsJson(stderr);
   if (!parsed) {
     core2.warning(`Failed to parse automations preview output (exit code ${exitCode})`);
-    if (stderr.trim()) {
-      core2.warning(stderr.trim());
-    }
     return [
       {
         status: "error",
@@ -24202,9 +24199,6 @@ async function runAutomationsPreview({
   }
   return parsed.results.map((result) => {
     if (result.status === "error") {
-      if (result.error) {
-        core2.warning(`${result.groupName}: ${result.error}`);
-      }
       return {
         status: "error",
         groupName: result.groupName,
