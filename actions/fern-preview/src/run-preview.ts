@@ -46,8 +46,6 @@ export async function runAutomationsPreview({
 }: {
   fernToken: string;
 }): Promise<PreviewResult[]> {
-  core.setSecret(fernToken);
-
   const args = ["automations", "preview", "--json", "--push-diff"];
 
   let stdout = "";
@@ -77,22 +75,32 @@ export async function runAutomationsPreview({
   // stderr instead. Try stdout first, then fall back to stderr.
   const parsed = extractAutomationsJson(stdout) ?? extractAutomationsJson(stderr);
   if (!parsed) {
-    core.warning("Failed to parse automations preview output");
+    // Log the full error to the runner logs (where core.setSecret masks tokens),
+    // but never post raw CLI output to the PR comment — it could contain secrets.
+    core.warning(`Failed to parse automations preview output (exit code ${exitCode})`);
+    if (stderr.trim()) {
+      core.warning(stderr.trim());
+    }
     return [
       {
         status: "error",
         groupName: "unknown",
-        error: truncate(stderr.trim() || `Exit code ${exitCode}`, 500),
+        error: `Preview failed (exit code ${exitCode}). See the Actions run log for details.`,
       },
     ];
   }
 
   return parsed.results.map((result): PreviewResult => {
     if (result.status === "error") {
+      // Log the raw error to runner logs (masked by core.setSecret), but use a
+      // generic message for the PR comment to avoid leaking secrets.
+      if (result.error) {
+        core.warning(`${result.groupName}: ${result.error}`);
+      }
       return {
         status: "error",
         groupName: result.groupName,
-        error: result.error,
+        error: "Preview failed. See the Actions run log for details.",
       };
     }
 
@@ -164,13 +172,6 @@ export function extractAutomationsJson(output: string): AutomationsPreviewJson |
   }
 
   return undefined;
-}
-
-function truncate(text: string, maxLength: number): string {
-  if (text.length <= maxLength) {
-    return text;
-  }
-  return `${text.slice(0, maxLength)} [truncated]`;
 }
 
 // Note: withTimeout rejects the wrapping promise on timeout but does NOT kill the

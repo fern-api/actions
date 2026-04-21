@@ -24164,7 +24164,6 @@ var PREVIEW_TIMEOUT_MS = 15 * 60 * 1e3;
 async function runAutomationsPreview({
   fernToken
 }) {
-  core2.setSecret(fernToken);
   const args = ["automations", "preview", "--json", "--push-diff"];
   let stdout = "";
   let stderr = "";
@@ -24189,21 +24188,27 @@ async function runAutomationsPreview({
   );
   const parsed = extractAutomationsJson(stdout) ?? extractAutomationsJson(stderr);
   if (!parsed) {
-    core2.warning("Failed to parse automations preview output");
+    core2.warning(`Failed to parse automations preview output (exit code ${exitCode})`);
+    if (stderr.trim()) {
+      core2.warning(stderr.trim());
+    }
     return [
       {
         status: "error",
         groupName: "unknown",
-        error: truncate(stderr.trim() || `Exit code ${exitCode}`, 500)
+        error: `Preview failed (exit code ${exitCode}). See the Actions run log for details.`
       }
     ];
   }
   return parsed.results.map((result) => {
     if (result.status === "error") {
+      if (result.error) {
+        core2.warning(`${result.groupName}: ${result.error}`);
+      }
       return {
         status: "error",
         groupName: result.groupName,
-        error: result.error
+        error: "Preview failed. See the Actions run log for details."
       };
     }
     const preview = result.previews?.[0];
@@ -24255,12 +24260,6 @@ function extractAutomationsJson(output) {
     }
   }
   return void 0;
-}
-function truncate(text, maxLength) {
-  if (text.length <= maxLength) {
-    return text;
-  }
-  return `${text.slice(0, maxLength)} [truncated]`;
 }
 function withTimeout(promise, ms, message) {
   return new Promise((resolve, reject) => {
@@ -24317,6 +24316,7 @@ async function run(inputs) {
 }
 (0, import_shared.runAction)(async () => {
   const inputs = parseInputs();
+  core3.setSecret(inputs.fernToken);
   await run(inputs);
 });
 /*! Bundled license information:

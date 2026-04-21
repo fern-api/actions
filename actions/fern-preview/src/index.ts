@@ -55,5 +55,6 @@ async function run(inputs: ActionInputs): Promise<void> {
 
 runAction(async () => {
   const inputs = parseInputs();
+  core.setSecret(inputs.fernToken);
   await run(inputs);
 });
