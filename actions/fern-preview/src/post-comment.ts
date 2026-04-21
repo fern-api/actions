@@ -64,11 +64,6 @@ function escapeTableCell(text: string): string {
   return text.replace(/\|/g, "\\|");
 }
 
-/** Escape HTML special characters for content inside <code> tags. */
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
 /** Escape markdown special characters in user-facing text to prevent injection. */
 function escapeMarkdown(text: string): string {
   return text.replace(/([\\`*_{}[\]()#+\-.!~<>|])/g, "\\$1");
@@ -92,25 +87,35 @@ export function formatComment(results: PreviewResult[]): string {
 
   for (const result of results) {
     if (result.status === "error") {
-      rows += `| ${escapeTableCell(result.groupName)} | :x: Failed | — | — |\n`;
+      rows += `| ${escapeTableCell(result.groupName)} | :x: Failed | — |\n`;
       continue;
     }
 
-    const installCell = result.installCommand
-      ? `<code>${escapeHtml(result.installCommand)}</code>`
-      : "—";
-
     const sanitizedDiffUrl = result.diffUrl ? sanitizeUrl(result.diffUrl) : undefined;
-    const diffCell = sanitizedDiffUrl ? `[View diff](${sanitizedDiffUrl})` : "—";
+    const diffCell = sanitizedDiffUrl ? `[Preview changes](${sanitizedDiffUrl})` : "—";
 
-    rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(result.packageName ?? "—")} | ${escapeTableCell(installCell)} | ${escapeTableCell(diffCell)} |\n`;
+    rows += `| ${escapeTableCell(result.groupName)} | :white_check_mark: Published | ${escapeTableCell(diffCell)} |\n`;
+  }
+
+  // Build install command sections below the table — code blocks render
+  // with GitHub's built-in copy button so users can click to copy.
+  let installSection = "";
+  const successResults = results.filter((r) => r.status === "success" && r.installCommand);
+  if (successResults.length > 0) {
+    installSection = "\n### Test install your SDK\n\n";
+    for (const result of successResults) {
+      if (successResults.length > 1) {
+        installSection += `**${escapeMarkdown(result.groupName)}**\n`;
+      }
+      installSection += `\`\`\`sh\n${result.installCommand}\n\`\`\`\n\n`;
+    }
   }
 
   // Append error details at the bottom
   const errors = results.filter((r) => r.status === "error" && r.error);
   let errorSection = "";
   if (errors.length > 0) {
-    errorSection = "\n### Errors\n\n";
+    errorSection = "### Errors\n\n";
     for (const err of errors) {
       errorSection += `**${escapeMarkdown(err.groupName)}**: ${escapeMarkdown(err.error ?? "Unknown error")}\n\n`;
     }
@@ -124,9 +129,9 @@ export function formatComment(results: PreviewResult[]): string {
   return `${COMMENT_MARKER}
 ## SDK Preview
 
-| Group | Package | Install | SDK Diff |
-|-------|---------|---------|----------|
-${rows}${errorSection}
+| Group | Status | Preview changes |
+|-------|--------|-----------------|
+${rows}${installSection}${errorSection}
 <sub>Published by <a href="https://github.com/fern-api/actions">fern-preview</a> · Last updated ${updatedAt}</sub>
 `;
 }
