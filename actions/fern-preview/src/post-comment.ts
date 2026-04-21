@@ -81,17 +81,13 @@ function sanitizeUrl(url: string): string | undefined {
 export function formatComment(results: PreviewResult[]): string {
   const successResults = results.filter((r) => r.status === "success");
   const errorResults = results.filter((r) => r.status === "error");
-  const showGroupHeaders = successResults.length > 1;
-
   let sections = "";
   for (const result of successResults) {
     if (result.status !== "success") {
       continue;
     }
 
-    if (showGroupHeaders) {
-      sections += `### ${escapeMarkdown(result.groupName)}\n\n`;
-    }
+    sections += `### ${escapeMarkdown(result.groupName)}\n\n`;
 
     const sanitizedDiffUrl = result.diffUrl ? sanitizeUrl(result.diffUrl) : undefined;
     if (sanitizedDiffUrl) {

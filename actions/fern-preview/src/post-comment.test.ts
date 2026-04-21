@@ -27,8 +27,8 @@ describe("formatComment", () => {
     const comment = formatComment(results);
     expect(comment).toContain("<!-- fern-sdk-preview -->");
     expect(comment).toContain("## SDK Preview");
-    // Single group: no group header, diff link and install together
-    expect(comment).not.toContain("### ts");
+    // Group header always shown
+    expect(comment).toContain("### ts\\-sdk");
     expect(comment).toContain("[Preview changes]");
     expect(comment).toContain(
       "```sh\nnpm install @acme/sdk@npm:@acme-preview/sdk@0.0.1-main.123 --registry https://npm.buildwithfern.com\n```"

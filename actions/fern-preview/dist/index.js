@@ -24092,17 +24092,14 @@ function sanitizeUrl(url) {
 function formatComment(results) {
   const successResults = results.filter((r) => r.status === "success");
   const errorResults = results.filter((r) => r.status === "error");
-  const showGroupHeaders = successResults.length > 1;
   let sections = "";
   for (const result of successResults) {
     if (result.status !== "success") {
       continue;
     }
-    if (showGroupHeaders) {
-      sections += `### ${escapeMarkdown(result.groupName)}
+    sections += `### ${escapeMarkdown(result.groupName)}
 
 `;
-    }
     const sanitizedDiffUrl = result.diffUrl ? sanitizeUrl(result.diffUrl) : void 0;
     if (sanitizedDiffUrl) {
       sections += `[Preview changes](${sanitizedDiffUrl})
