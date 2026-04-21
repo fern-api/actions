@@ -41,11 +41,12 @@ runs:
       env:
         FERN_VERSION_INPUT: ${{ inputs.fern-version }}
 
+    # Pinned to main HEAD SHA. The repo-ref input requires the updated setup-cli
+    # from this PR — update the SHA after merging to enable source builds.
     # TODO: pin to a release tag once setup-cli has one (e.g. setup-cli@v1)
-    - uses: fern-api/actions/actions/setup-cli@main
+    - uses: fern-api/actions/actions/setup-cli@f5696be181b71b00b61a8816e9b06cc176f569b8
       with:
         version: ${{ steps.cli-version.outputs.version }}
-        repo-ref: ${{ inputs.fern-repo-ref }}
 
     - name: Run preview
       id: preview
