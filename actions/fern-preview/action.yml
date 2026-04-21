@@ -42,7 +42,7 @@ runs:
         FERN_VERSION_INPUT: ${{ inputs.fern-version }}
 
     # TODO: pin to a release tag once setup-cli has one (e.g. setup-cli@v1)
-    - uses: fern-api/actions/setup-cli@f5696be181b71b00b61a8816e9b06cc176f569b8
+    - uses: fern-api/actions/actions/setup-cli@devin/1775761816-simplify-fern-preview
       with:
         version: ${{ steps.cli-version.outputs.version }}
         repo-ref: ${{ inputs.fern-repo-ref }}
