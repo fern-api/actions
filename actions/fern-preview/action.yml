@@ -9,14 +9,6 @@ inputs:
     description: "Fern CLI version to install. 'auto' (default) installs the latest release; the CLI self-redirects to the version pinned in fern.config.json at runtime. Use 'latest' for the newest release, or pin to a specific version (e.g. '3.98.5')."
     required: false
     default: "auto"
-  github-token:
-    description: "GitHub token for posting PR comments. Defaults to the built-in GITHUB_TOKEN."
-    required: false
-    default: "${{ github.token }}"
-  push-diff:
-    description: "Push a preview diff branch to the SDK repo for comparison. Requires github config in generators.yml."
-    required: false
-    default: "true"
   fern-repo-ref:
     description: "Build CLI from source at this fern-api/fern git ref instead of installing from npm. For testing unreleased CLI changes."
     required: false
@@ -54,8 +46,7 @@ runs:
       run: node ${{ github.action_path }}/dist/index.js
       env:
         INPUT_FERN-TOKEN: ${{ inputs.fern-token }}
-        INPUT_GITHUB-TOKEN: ${{ inputs.github-token }}
-        INPUT_PUSH-DIFF: ${{ inputs.push-diff }}
+        GITHUB_TOKEN: ${{ github.token }}
 branding:
   icon: "package"
   color: "green"

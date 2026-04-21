@@ -43,17 +43,12 @@ interface AutomationsPreviewJson {
  */
 export async function runAutomationsPreview({
   fernToken,
-  pushDiff,
 }: {
   fernToken: string;
-  pushDiff: boolean;
 }): Promise<PreviewResult[]> {
   core.setSecret(fernToken);
 
-  const args = ["automations", "preview", "--json"];
-  if (pushDiff) {
-    args.push("--push-diff");
-  }
+  const args = ["automations", "preview", "--json", "--push-diff"];
 
   let stdout = "";
   let stderr = "";

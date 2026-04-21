@@ -6,15 +6,11 @@ import { runAutomationsPreview } from "./run-preview.js";
 
 interface ActionInputs {
   fernToken: string;
-  githubToken: string;
-  pushDiff: boolean;
 }
 
 function parseInputs(): ActionInputs {
   return {
     fernToken: getRequiredInput("fern-token"),
-    githubToken: getRequiredInput("github-token"),
-    pushDiff: core.getBooleanInput("push-diff"),
   };
 }
 
@@ -24,7 +20,6 @@ async function run(inputs: ActionInputs): Promise<void> {
 
   const results = await runAutomationsPreview({
     fernToken: inputs.fernToken,
-    pushDiff: inputs.pushDiff,
   });
 
   if (results.length === 0) {
@@ -37,7 +32,11 @@ async function run(inputs: ActionInputs): Promise<void> {
 
   if (prNumber != null) {
     try {
-      await postOrUpdateComment({ results, prNumber, token: inputs.githubToken });
+      const githubToken = process.env.GITHUB_TOKEN;
+      if (!githubToken) {
+        throw new Error("GITHUB_TOKEN environment variable is not set");
+      }
+      await postOrUpdateComment({ results, prNumber, token: githubToken });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       core.warning(`Failed to post PR comment: ${message}`);

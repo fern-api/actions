@@ -19710,7 +19710,7 @@ var require_core = __commonJS({
       return inputs.map((input) => input.trim());
     }
     exports2.getMultilineInput = getMultilineInput;
-    function getBooleanInput2(name, options) {
+    function getBooleanInput(name, options) {
       const trueValue = ["true", "True", "TRUE"];
       const falseValue = ["false", "False", "FALSE"];
       const val = getInput(name, options);
@@ -19721,7 +19721,7 @@ var require_core = __commonJS({
       throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}
 Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
-    exports2.getBooleanInput = getBooleanInput2;
+    exports2.getBooleanInput = getBooleanInput;
     function setOutput2(name, value) {
       const filePath = process.env["GITHUB_OUTPUT"] || "";
       if (filePath) {
@@ -24162,14 +24162,10 @@ var core2 = __toESM(require_core());
 var exec = __toESM(require_exec());
 var PREVIEW_TIMEOUT_MS = 15 * 60 * 1e3;
 async function runAutomationsPreview({
-  fernToken,
-  pushDiff
+  fernToken
 }) {
   core2.setSecret(fernToken);
-  const args = ["automations", "preview", "--json"];
-  if (pushDiff) {
-    args.push("--push-diff");
-  }
+  const args = ["automations", "preview", "--json", "--push-diff"];
   let stdout = "";
   let stderr = "";
   const exitCode = await withTimeout(
@@ -24285,15 +24281,12 @@ function withTimeout(promise, ms, message) {
 // src/index.ts
 function parseInputs() {
   return {
-    fernToken: (0, import_shared.getRequiredInput)("fern-token"),
-    githubToken: (0, import_shared.getRequiredInput)("github-token"),
-    pushDiff: core3.getBooleanInput("push-diff")
+    fernToken: (0, import_shared.getRequiredInput)("fern-token")
   };
 }
 async function run(inputs) {
   const results = await runAutomationsPreview({
-    fernToken: inputs.fernToken,
-    pushDiff: inputs.pushDiff
+    fernToken: inputs.fernToken
   });
   if (results.length === 0) {
     core3.info("No eligible generator groups found. Skipping preview.");
@@ -24303,7 +24296,11 @@ async function run(inputs) {
   const prNumber = github2.context.payload.pull_request?.number;
   if (prNumber != null) {
     try {
-      await postOrUpdateComment({ results, prNumber, token: inputs.githubToken });
+      const githubToken = process.env.GITHUB_TOKEN;
+      if (!githubToken) {
+        throw new Error("GITHUB_TOKEN environment variable is not set");
+      }
+      await postOrUpdateComment({ results, prNumber, token: githubToken });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       core3.warning(`Failed to post PR comment: ${message}`);

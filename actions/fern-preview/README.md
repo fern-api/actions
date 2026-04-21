@@ -34,17 +34,24 @@ jobs:
 |-------|----------|---------|-------------|
 | `fern-token` | Yes | — | Fern authentication token (`FERN_TOKEN`) |
 | `fern-version` | No | `auto` | Fern CLI version to install. `auto` installs the latest release; the CLI self-redirects to the version pinned in `fern.config.json` at runtime. |
-| `github-token` | No | `${{ github.token }}` | GitHub token for posting PR comments |
-| `push-diff` | No | `true` | Push a preview diff branch to the SDK repo for comparison |
 | `fern-repo-ref` | No | — | _(Internal)_ Build CLI from source at this `fern-api/fern` git ref instead of installing from npm |
 
 ## PR Comment
 
-The action posts (or updates) a single comment on the PR:
+The action posts (or updates) a single comment on the PR. Each group gets its own section with a diff link and install command:
 
-| Group | Package | Install | SDK Diff |
-|-------|---------|---------|----------|
-| ts-sdk | @acme-preview/sdk | `npm install ...` | [View diff](...) |
+```
+## SDK Preview
+
+### ts-sdk
+[Preview changes](https://...)
+
+```sh
+npm install @acme/sdk@npm:@acme-preview/sdk@0.0.1 --registry https://npm.buildwithfern.com
+```
+```
+
+For multiple groups, each group appears as a separate section. A collapsible AI prompt section is included with all install commands for easy copy-paste into AI assistants.
 
 ## Requirements
 
