@@ -24123,11 +24123,36 @@ ${result.installCommand}
 `;
     }
   }
+  let aiPromptSection = "";
+  const installableResults = successResults.filter(
+    (r) => r.status === "success" && r.installCommand
+  );
+  if (installableResults.length > 0) {
+    const installLines = installableResults.map((r) => {
+      if (r.status !== "success") {
+        return "";
+      }
+      return `- ${r.groupName}: ${r.installCommand}`;
+    }).join("\n");
+    const promptText = `Install the following preview SDK packages and run the test suite to verify nothing breaks:
+
+${installLines}`;
+    aiPromptSection = `<details>
+<summary>\u{1F916} AI prompt</summary>
+
+\`\`\`text
+${promptText}
+\`\`\`
+
+</details>
+
+`;
+  }
   const updatedAt = (/* @__PURE__ */ new Date()).toISOString().replace("T", " ").replace(/\.\d+Z$/, " UTC");
   return `${COMMENT_MARKER}
 ## SDK Preview
 
-${sections}${errorSection}
+${sections}${errorSection}${aiPromptSection}
 <sub>Published by <a href="https://github.com/fern-api/actions">fern-preview</a> \xB7 Last updated ${updatedAt}</sub>
 `;
 }
