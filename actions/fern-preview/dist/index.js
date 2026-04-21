@@ -24076,9 +24076,6 @@ async function findExistingComment(octokit, owner, repo, prNumber) {
   }
   return void 0;
 }
-function escapeTableCell(text) {
-  return text.replace(/\|/g, "\\|");
-}
 function escapeMarkdown(text) {
   return text.replace(/([\\`*_{}[\]()#+\-.!~<>|])/g, "\\$1");
 }
@@ -24093,39 +24090,37 @@ function sanitizeUrl(url) {
   return void 0;
 }
 function formatComment(results) {
-  let rows = "";
-  for (const result of results) {
-    if (result.status === "error") {
-      rows += `| ${escapeTableCell(result.groupName)} | :x: Failed |
-`;
+  const successResults = results.filter((r) => r.status === "success");
+  const errorResults = results.filter((r) => r.status === "error");
+  const showGroupHeaders = successResults.length > 1;
+  let sections = "";
+  for (const result of successResults) {
+    if (result.status !== "success") {
       continue;
     }
+    if (showGroupHeaders) {
+      sections += `### ${escapeMarkdown(result.groupName)}
+
+`;
+    }
     const sanitizedDiffUrl = result.diffUrl ? sanitizeUrl(result.diffUrl) : void 0;
-    const diffCell = sanitizedDiffUrl ? `[Preview changes](${sanitizedDiffUrl})` : "\u2014";
-    rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(diffCell)} |
+    if (sanitizedDiffUrl) {
+      sections += `[Preview changes](${sanitizedDiffUrl})
+
 `;
-  }
-  let installSection = "";
-  const successResults = results.filter((r) => r.status === "success" && r.installCommand);
-  if (successResults.length > 0) {
-    installSection = "\n### Test install your SDK\n\n";
-    for (const result of successResults) {
-      if (successResults.length > 1) {
-        installSection += `**${escapeMarkdown(result.groupName)}**
-`;
-      }
-      installSection += `\`\`\`sh
+    }
+    if (result.installCommand) {
+      sections += `\`\`\`sh
 ${result.installCommand}
 \`\`\`
 
 `;
     }
   }
-  const errors = results.filter((r) => r.status === "error" && r.error);
   let errorSection = "";
-  if (errors.length > 0) {
+  if (errorResults.length > 0) {
     errorSection = "### Errors\n\n";
-    for (const err of errors) {
+    for (const err of errorResults) {
       errorSection += `**${escapeMarkdown(err.groupName)}**: ${escapeMarkdown(err.error ?? "Unknown error")}
 
 `;
@@ -24135,9 +24130,7 @@ ${result.installCommand}
   return `${COMMENT_MARKER}
 ## SDK Preview
 
-| Group | Preview changes |
-|-------|-----------------|
-${rows}${installSection}${errorSection}
+${sections}${errorSection}
 <sub>Published by <a href="https://github.com/fern-api/actions">fern-preview</a> \xB7 Last updated ${updatedAt}</sub>
 `;
 }

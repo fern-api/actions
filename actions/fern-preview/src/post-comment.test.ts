@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 describe("formatComment", () => {
-  it("formats successful results with install and diff", () => {
+  it("formats single successful result with install and diff", () => {
     const results: PreviewResult[] = [
       {
         status: "success",
@@ -27,17 +27,14 @@ describe("formatComment", () => {
     const comment = formatComment(results);
     expect(comment).toContain("<!-- fern-sdk-preview -->");
     expect(comment).toContain("## SDK Preview");
-    // Table has Group and Preview changes columns (no Status column)
-    expect(comment).toContain("| Group | Preview changes |");
-    expect(comment).not.toContain("| Status");
+    // Single group: no group header, diff link and install together
+    expect(comment).not.toContain("### ts");
     expect(comment).toContain("[Preview changes]");
-    // Install command is in a code block below the table
-    expect(comment).toContain("### Test install your SDK");
     expect(comment).toContain(
       "```sh\nnpm install @acme/sdk@npm:@acme-preview/sdk@0.0.1-main.123 --registry https://npm.buildwithfern.com\n```"
     );
-    // Package column removed
-    expect(comment).not.toContain("| Package |");
+    // No table format
+    expect(comment).not.toContain("| Group");
     expect(comment).not.toContain("### Errors");
     expect(comment).toContain("Last updated 2025-06-15 12:30:45 UTC");
   });
@@ -52,12 +49,11 @@ describe("formatComment", () => {
     ];
 
     const comment = formatComment(results);
-    expect(comment).toContain(":x: Failed");
     expect(comment).toContain("### Errors");
     expect(comment).toContain("Docker not found");
   });
 
-  it("shows dash when diffUrl is missing", () => {
+  it("omits diff link when diffUrl is missing", () => {
     const results: PreviewResult[] = [
       {
         status: "success",
@@ -68,8 +64,9 @@ describe("formatComment", () => {
     ];
 
     const comment = formatComment(results);
-    // When no diffUrl is returned, the preview changes column shows em dash
     expect(comment).not.toContain("[Preview changes]");
+    // Install command still present
+    expect(comment).toContain("```sh\nnpm install ...\n```");
   });
 
   it("handles mixed success and error results", () => {
@@ -89,15 +86,15 @@ describe("formatComment", () => {
     ];
 
     const comment = formatComment(results);
+    // Success group has diff + install together
     expect(comment).toContain("[Preview changes]");
-    expect(comment).toContain(":x: Failed");
-    expect(comment).toContain("No supported generators");
-    // Install section should show the successful group
-    expect(comment).toContain("### Test install your SDK");
     expect(comment).toContain("```sh\nnpm install ...\n```");
+    // Error group in separate section
+    expect(comment).toContain("### Errors");
+    expect(comment).toContain("No supported generators");
   });
 
-  it("escapes newlines in error messages for table rendering", () => {
+  it("escapes markdown special characters in error messages", () => {
     const results: PreviewResult[] = [
       {
         status: "error",
@@ -111,12 +108,6 @@ describe("formatComment", () => {
     expect(comment).toContain("Line one");
     expect(comment).toContain("Line two");
     expect(comment).toContain("Line three");
-    // The table row itself should not contain raw newlines
-    const tableRows = comment.split("\n").filter((line) => line.startsWith("|"));
-    for (const row of tableRows) {
-      // Each table row should be a single line (no embedded newlines)
-      expect(row).not.toMatch(/\n/);
-    }
   });
 
   it("rejects non-https diff URLs", () => {
@@ -150,7 +141,7 @@ describe("formatComment", () => {
     expect(comment).toContain("```sh\nnpm install @acme/<preview>/sdk@0.0.1\n```");
   });
 
-  it("escapes markdown special characters in error messages", () => {
+  it("escapes markdown injection in error messages", () => {
     const results: PreviewResult[] = [
       {
         status: "error",
@@ -165,7 +156,7 @@ describe("formatComment", () => {
     expect(comment).toContain("\\*\\*bold\\*\\*");
   });
 
-  it("labels groups when multiple successful results exist", () => {
+  it("shows group headers when multiple successful results exist", () => {
     const results: PreviewResult[] = [
       {
         status: "success",
@@ -184,14 +175,14 @@ describe("formatComment", () => {
     ];
 
     const comment = formatComment(results);
-    // When multiple groups succeed, each install block is labeled
-    expect(comment).toContain("**ts\\-sdk**");
-    expect(comment).toContain("**node\\-sdk**");
+    // Multiple groups: each gets its own header with diff + install
+    expect(comment).toContain("### ts\\-sdk");
+    expect(comment).toContain("### node\\-sdk");
     expect(comment).toContain("```sh\nnpm install @acme/sdk@npm:@acme-preview/sdk@0.0.1\n```");
     expect(comment).toContain("```sh\nnpm install @acme/node@npm:@acme-preview/node@0.0.1\n```");
   });
 
-  it("omits install section when no install commands exist", () => {
+  it("omits code block when no install command exists", () => {
     const results: PreviewResult[] = [
       {
         status: "success",
@@ -202,7 +193,7 @@ describe("formatComment", () => {
     ];
 
     const comment = formatComment(results);
-    expect(comment).not.toContain("### Test install your SDK");
+    expect(comment).toContain("[Preview changes]");
     expect(comment).not.toContain("```sh");
   });
 });
