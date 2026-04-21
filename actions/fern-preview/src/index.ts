@@ -37,9 +37,8 @@ async function run(inputs: ActionInputs): Promise<void> {
         throw new Error("GITHUB_TOKEN environment variable is not set");
       }
       await postOrUpdateComment({ results, prNumber, token: githubToken });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      core.warning(`Failed to post PR comment: ${message}`);
+    } catch {
+      core.warning("Failed to post PR comment. See the Actions run log for details.");
     }
   } else {
     core.info("Not a pull request event — skipping PR comment.");
