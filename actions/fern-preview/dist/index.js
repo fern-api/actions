@@ -24096,13 +24096,13 @@ function formatComment(results) {
   let rows = "";
   for (const result of results) {
     if (result.status === "error") {
-      rows += `| ${escapeTableCell(result.groupName)} | :x: Failed | \u2014 |
+      rows += `| ${escapeTableCell(result.groupName)} | :x: Failed |
 `;
       continue;
     }
     const sanitizedDiffUrl = result.diffUrl ? sanitizeUrl(result.diffUrl) : void 0;
     const diffCell = sanitizedDiffUrl ? `[Preview changes](${sanitizedDiffUrl})` : "\u2014";
-    rows += `| ${escapeTableCell(result.groupName)} | :white_check_mark: Published | ${escapeTableCell(diffCell)} |
+    rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(diffCell)} |
 `;
   }
   let installSection = "";
@@ -24135,8 +24135,8 @@ ${result.installCommand}
   return `${COMMENT_MARKER}
 ## SDK Preview
 
-| Group | Status | Preview changes |
-|-------|--------|-----------------|
+| Group | Preview changes |
+|-------|-----------------|
 ${rows}${installSection}${errorSection}
 <sub>Published by <a href="https://github.com/fern-api/actions">fern-preview</a> \xB7 Last updated ${updatedAt}</sub>
 `;

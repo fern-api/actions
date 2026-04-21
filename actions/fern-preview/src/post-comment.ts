@@ -87,14 +87,14 @@ export function formatComment(results: PreviewResult[]): string {
 
   for (const result of results) {
     if (result.status === "error") {
-      rows += `| ${escapeTableCell(result.groupName)} | :x: Failed | — |\n`;
+      rows += `| ${escapeTableCell(result.groupName)} | :x: Failed |\n`;
       continue;
     }
 
     const sanitizedDiffUrl = result.diffUrl ? sanitizeUrl(result.diffUrl) : undefined;
     const diffCell = sanitizedDiffUrl ? `[Preview changes](${sanitizedDiffUrl})` : "—";
 
-    rows += `| ${escapeTableCell(result.groupName)} | :white_check_mark: Published | ${escapeTableCell(diffCell)} |\n`;
+    rows += `| ${escapeTableCell(result.groupName)} | ${escapeTableCell(diffCell)} |\n`;
   }
 
   // Build install command sections below the table — code blocks render
@@ -129,8 +129,8 @@ export function formatComment(results: PreviewResult[]): string {
   return `${COMMENT_MARKER}
 ## SDK Preview
 
-| Group | Status | Preview changes |
-|-------|--------|-----------------|
+| Group | Preview changes |
+|-------|-----------------|
 ${rows}${installSection}${errorSection}
 <sub>Published by <a href="https://github.com/fern-api/actions">fern-preview</a> · Last updated ${updatedAt}</sub>
 `;

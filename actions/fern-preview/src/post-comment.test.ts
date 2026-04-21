@@ -27,9 +27,9 @@ describe("formatComment", () => {
     const comment = formatComment(results);
     expect(comment).toContain("<!-- fern-sdk-preview -->");
     expect(comment).toContain("## SDK Preview");
-    // Table has Group, Status, Preview changes columns
-    expect(comment).toContain("| Group | Status | Preview changes |");
-    expect(comment).toContain(":white_check_mark: Published");
+    // Table has Group and Preview changes columns (no Status column)
+    expect(comment).toContain("| Group | Preview changes |");
+    expect(comment).not.toContain("| Status");
     expect(comment).toContain("[Preview changes]");
     // Install command is in a code block below the table
     expect(comment).toContain("### Test install your SDK");
@@ -89,7 +89,7 @@ describe("formatComment", () => {
     ];
 
     const comment = formatComment(results);
-    expect(comment).toContain(":white_check_mark: Published");
+    expect(comment).toContain("[Preview changes]");
     expect(comment).toContain(":x: Failed");
     expect(comment).toContain("No supported generators");
     // Install section should show the successful group
