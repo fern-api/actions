@@ -34,7 +34,6 @@ jobs:
 |-------|----------|---------|-------------|
 | `fern-token` | Yes | — | Fern authentication token (`FERN_TOKEN`) |
 | `fern-version` | No | `auto` | Fern CLI version to install. `auto` installs the latest release; the CLI self-redirects to the version pinned in `fern.config.json` at runtime. |
-| `fern-repo-ref` | No | — | _(Internal)_ Build CLI from source at this `fern-api/fern` git ref instead of installing from npm |
 
 ## PR Comment
 
