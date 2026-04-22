@@ -1,0 +1,59 @@
+import * as core from "@actions/core";
+import * as github from "@actions/github";
+import { getRequiredInput, runAction } from "@fern-github-actions/shared";
+import { postOrUpdateComment } from "./post-comment.js";
+import { runAutomationsPreview } from "./run-preview.js";
+
+interface ActionInputs {
+  fernToken: string;
+}
+
+function parseInputs(): ActionInputs {
+  return {
+    fernToken: getRequiredInput("fern-token"),
+  };
+}
+
+async function run(inputs: ActionInputs): Promise<void> {
+  // CLI installation is handled by setup-cli (composite action step).
+  // Detection and execution are now handled by `fern automations preview`.
+
+  const results = await runAutomationsPreview({
+    fernToken: inputs.fernToken,
+  });
+
+  if (results.length === 0) {
+    core.info("No eligible generator groups found. Skipping preview.");
+    core.setOutput("results", "[]");
+    return;
+  }
+
+  const prNumber = github.context.payload.pull_request?.number;
+
+  if (prNumber != null) {
+    try {
+      const githubToken = process.env.GITHUB_TOKEN;
+      if (!githubToken) {
+        throw new Error("GITHUB_TOKEN environment variable is not set");
+      }
+      await postOrUpdateComment({ results, prNumber, token: githubToken });
+    } catch {
+      core.warning("Failed to post PR comment. See the Actions run log for details.");
+    }
+  } else {
+    core.info("Not a pull request event — skipping PR comment.");
+    for (const result of results) {
+      if (result.status === "success" && result.installCommand) {
+        core.info(`${result.groupName}: ${result.installCommand}`);
+      }
+    }
+  }
+
+  core.setOutput("results", JSON.stringify(results));
+}
+
+runAction(async () => {
+  const inputs = parseInputs();
+  core.setSecret(inputs.fernToken);
+  await run(inputs);
+});
