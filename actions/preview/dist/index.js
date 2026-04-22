@@ -24137,14 +24137,13 @@ ${result.installCommand}
     const promptText = `Install the following preview SDK packages and run the test suite to verify nothing breaks:
 
 ${installLines}`;
-    aiPromptSection = `<details>
-<summary>\u{1F916} AI prompt</summary>
+    aiPromptSection = `### AI prompt
+
+Copy and paste this into your AI assistant to install the preview packages and test them.
 
 \`\`\`text
 ${promptText}
 \`\`\`
-
-</details>
 
 `;
   }

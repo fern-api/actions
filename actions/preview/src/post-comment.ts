@@ -125,14 +125,15 @@ export function formatComment(results: PreviewResult[]): string {
 
     const promptText = `Install the following preview SDK packages and run the test suite to verify nothing breaks:\n\n${installLines}`;
 
-    aiPromptSection = `<details>
-<summary>🤖 AI prompt</summary>
+    aiPromptSection = `### AI prompt
+
+Copy and paste this into your AI assistant to install the preview packages and test them.
 
 \`\`\`text
 ${promptText}
 \`\`\`
 
-</details>\n\n`;
+`;
   }
 
   const updatedAt = new Date()
