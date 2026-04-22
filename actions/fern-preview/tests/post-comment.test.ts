@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { formatComment } from "./post-comment.js";
-import type { PreviewResult } from "./run-preview.js";
+import { formatComment } from "../src/post-comment.js";
+import type { PreviewResult } from "../src/run-preview.js";
 
 beforeEach(() => {
   vi.useFakeTimers();

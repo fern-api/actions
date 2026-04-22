@@ -5,7 +5,7 @@ vi.mock("@actions/core", () => ({
   warning: vi.fn(),
 }));
 
-import { extractAutomationsJson } from "./run-preview.js";
+import { extractAutomationsJson } from "../src/run-preview.js";
 
 describe("extractAutomationsJson", () => {
   it("parses clean JSON output", () => {
