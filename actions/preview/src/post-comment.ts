@@ -144,6 +144,6 @@ ${promptText}
 ## SDK Preview
 
 ${sections}${errorSection}${aiPromptSection}
-<sub>Published by <a href="https://github.com/fern-api/actions">fern-preview</a> · Last updated ${updatedAt}</sub>
+<sub>Published by <a href="https://github.com/fern-api/actions">preview</a> · Last updated ${updatedAt}</sub>
 `;
 }

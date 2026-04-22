@@ -1,4 +1,4 @@
-# fern-preview
+# preview
 
 A GitHub Action that publishes preview SDK packages and posts PR comments with install links and SDK diffs.
 
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: fern-api/actions/fern-preview@v1
+      - uses: fern-api/actions/preview@v1
         with:
           fern-token: ${{ secrets.FERN_TOKEN }}
 ```

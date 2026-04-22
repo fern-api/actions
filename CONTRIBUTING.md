@@ -7,7 +7,7 @@ fern-api/actions/
 ├── actions/
 │   ├── setup-cli/          # Composite action — action.yml + README only
 │   ├── sync-openapi/       # Node.js action — TypeScript, built to dist/
-│   ├── fern-preview/       # Hybrid composite+Node.js — composite steps install CLI, then runs bundled JS
+│   ├── preview/            # Hybrid composite+Node.js — composite steps install CLI, then runs bundled JS
 │   ├── generate/           # Node.js action — ALPHA
 │   ├── upgrade/            # Node.js action — ALPHA
 │   ├── verify/             # Node.js action — ALPHA
@@ -76,7 +76,7 @@ Use this when you need composite steps (e.g. installing a CLI) **before** runnin
 4. Structure the TypeScript source the same as a Node.js action (`src/`, `tsup.config.ts`, tests).
 5. Commit `dist/` like a normal Node.js action — the composite step executes it directly.
 
-`fern-preview` uses this pattern: composite steps install the Fern CLI, then a shell step runs the bundled JS that calls the CLI and posts PR comments.
+`preview` uses this pattern: composite steps install the Fern CLI, then a shell step runs the bundled JS that calls the CLI and posts PR comments.
 
 ## Releasing
 
@@ -129,7 +129,7 @@ The following secret must be set on this repository (Settings → Secrets and va
 |---|---|
 | `actions/sync-openapi` | `uses: fern-api/actions/sync-openapi@v4` |
 | `actions/setup-cli` | `uses: fern-api/actions/setup-cli@v1` |
-| `actions/fern-preview` | `uses: fern-api/actions/fern-preview@v1` |
+| `actions/preview` | `uses: fern-api/actions/preview@v1` |
 | `actions/generate` | `uses: fern-api/actions/generate@v1` _(alpha)_ |
 | `actions/upgrade` | `uses: fern-api/actions/upgrade@v1` _(alpha)_ |
 | `actions/verify` | `uses: fern-api/actions/verify@v1` _(alpha)_ |

@@ -1,5 +1,5 @@
 {
-  "name": "@fern-github-actions/fern-preview",
+  "name": "@fern-github-actions/preview",
   "version": "1.0.0",
   "private": true,
   "description": "GitHub Action to publish preview SDKs and post PR comments with install links and SDK diff links",
