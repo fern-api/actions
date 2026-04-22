@@ -7,7 +7,7 @@ fern-api/actions/
 ├── actions/
 │   ├── setup-cli/          # Composite action — action.yml + README only
 │   ├── sync-openapi/       # Node.js action — TypeScript, built to dist/
-│   ├── preview/            # Hybrid composite+Node.js — composite steps install CLI, then runs bundled JS
+│   ├── preview/            # Hybrid composite+Node.js — ALPHA
 │   ├── generate/           # Node.js action — ALPHA
 │   ├── upgrade/            # Node.js action — ALPHA
 │   ├── verify/             # Node.js action — ALPHA
@@ -129,7 +129,7 @@ The following secret must be set on this repository (Settings → Secrets and va
 |---|---|
 | `actions/sync-openapi` | `uses: fern-api/actions/sync-openapi@v4` |
 | `actions/setup-cli` | `uses: fern-api/actions/setup-cli@v1` |
-| `actions/preview` | `uses: fern-api/actions/preview@v1` |
+| `actions/preview` | `uses: fern-api/actions/preview@v1` _(alpha)_ |
 | `actions/generate` | `uses: fern-api/actions/generate@v1` _(alpha)_ |
 | `actions/upgrade` | `uses: fern-api/actions/upgrade@v1` _(alpha)_ |
 | `actions/verify` | `uses: fern-api/actions/verify@v1` _(alpha)_ |
