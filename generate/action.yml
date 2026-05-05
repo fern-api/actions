@@ -28,13 +28,13 @@ runs:
   using: composite
   steps:
     - name: Verify Fern token
-      uses: fern-api/actions/verify-token@niels/generate
+      uses: fern-api/actions/verify-token@main
       with:
         fern-token: ${{ inputs.fern-token }}
 
     - name: Resolve Fern CLI
       id: cli
-      uses: fern-api/actions/resolve-cli@niels/generate
+      uses: fern-api/actions/resolve-cli@main
       with:
         version: auto
 

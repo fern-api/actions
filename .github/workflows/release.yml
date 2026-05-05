@@ -8,6 +8,21 @@ name: Release
 # to e.g. fern-api/actions/sync-openapi@v4 get the update automatically.
 #
 # example-action is blocked from releasing (template only).
+#
+# TODO: pin internal sibling-action refs at release time.
+# Composite actions in this repo (e.g. generate/action.yml) currently use
+# `uses: fern-api/actions/<sibling>@main` for sibling actions. This is fine for
+# day-to-day development but means a customer pinned to generate@v1 still
+# resolves verify-token from main — drift risk.
+# Fix at release time, not by mutating tags (immutable tags are the future):
+#   1. Cut releases on a branch (e.g. release/<action>@v1.2.3).
+#   2. Sed-rewrite sibling refs in <action>/action.yml from @main to @v1.2.3.
+#   3. Commit the rewrite on that branch.
+#   4. Tag v1.2.3 from that commit (created once, never moved).
+#   5. Move floating aliases (v1, v1.2) to the same commit — what this workflow
+#      already does for non-internally-referencing actions.
+# Result: customers on @v1.2.3 get a fully self-consistent composition;
+# customers on @v1 get auto-bumps via the floating alias.
 
 on:
   release:
