@@ -8,6 +8,7 @@ fern-api/actions/
 ├── resolve-cli/            # Composite action
 ├── verify-token/           # Composite action
 ├── sync-openapi/           # Node.js action — TypeScript, built to dist/
+├── preview/                # Hybrid composite+Node.js — ALPHA
 ├── generate/               # Composite action (ALPHA)
 ├── upgrade/                # Node.js action — ALPHA
 ├── verify/                 # Node.js action — ALPHA
@@ -66,6 +67,18 @@ Pre-commit hooks run `pnpm check` and `pnpm typecheck` automatically on every co
 1. Create `<your-action>/action.yml` and `<your-action>/README.md`.
 2. No `package.json`, no `dist/` — composite actions run shell steps directly.
 
+### Hybrid composite + Node.js action
+
+Use this when you need composite steps (e.g. installing a CLI) **before** running Node.js logic.
+
+1. Set `runs.using: composite` in `action.yml`.
+2. Add composite steps for setup (e.g. `uses: fern-api/actions/setup-cli@...`).
+3. Add a final step that runs `node ${{ github.action_path }}/dist/index.js`.
+4. Structure the TypeScript source the same as a Node.js action (`src/`, `tsup.config.ts`, tests).
+5. Commit `dist/` like a normal Node.js action — the composite step executes it directly.
+
+`preview` uses this pattern: composite steps install the Fern CLI, then a shell step runs the bundled JS that calls the CLI and posts PR comments.
+
 ## Releasing
 
 All actions are referenced directly from `fern-api/actions` — consumers use `uses: fern-api/actions/<name>@<version>`. No mirroring to standalone repos.
@@ -117,6 +130,7 @@ The following secret must be set on this repository (Settings → Secrets and va
 |---|---|
 | `sync-openapi` | `uses: fern-api/actions/sync-openapi@v4` |
 | `setup-cli` | `uses: fern-api/actions/setup-cli@v1` |
+| `preview` | `uses: fern-api/actions/preview@v1` _(alpha)_ |
 | `generate` | `uses: fern-api/actions/generate@v1` _(alpha)_ |
 | `upgrade` | `uses: fern-api/actions/upgrade@v1` _(alpha)_ |
 | `verify` | `uses: fern-api/actions/verify@v1` _(alpha)_ |
