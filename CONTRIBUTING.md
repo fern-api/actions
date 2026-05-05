@@ -4,14 +4,15 @@
 
 ```
 fern-api/actions/
-├── actions/
-│   ├── setup-cli/          # Composite action — action.yml + README only
-│   ├── sync-openapi/       # Node.js action — TypeScript, built to dist/
-│   ├── preview/            # Hybrid composite+Node.js — ALPHA
-│   ├── generate/           # Node.js action — ALPHA
-│   ├── upgrade/            # Node.js action — ALPHA
-│   ├── verify/             # Node.js action — ALPHA
-│   └── example-action/     # Template — not released
+├── setup-cli/              # Composite action — action.yml + README only
+├── resolve-cli/            # Composite action
+├── verify-token/           # Composite action
+├── sync-openapi/           # Node.js action — TypeScript, built to dist/
+├── preview/                # Hybrid composite+Node.js — ALPHA
+├── generate/               # Composite action (ALPHA)
+├── upgrade/                # Node.js action — ALPHA
+├── verify/                 # Node.js action — ALPHA
+├── example-action/         # Template — not released
 ├── packages/
 │   └── shared/             # Shared utilities, bundled into each Node.js action at build time
 ├── .github/workflows/
@@ -54,7 +55,7 @@ Pre-commit hooks run `pnpm check` and `pnpm typecheck` automatically on every co
 
 ### Node.js action
 
-1. Copy `actions/example-action/` as a starting point.
+1. Copy `example-action/` as a starting point.
 2. Update `package.json` — set `name` to `@fern-github-actions/<your-action>`.
 3. Update `action.yml` — set `runs.using: node20` and `runs.main: dist/index.js`.
 4. Implement logic in `src/index.ts`; write tests in `tests/`.
@@ -63,7 +64,7 @@ Pre-commit hooks run `pnpm check` and `pnpm typecheck` automatically on every co
 
 ### Composite action
 
-1. Create `actions/<your-action>/action.yml` and `actions/<your-action>/README.md`.
+1. Create `<your-action>/action.yml` and `<your-action>/README.md`.
 2. No `package.json`, no `dist/` — composite actions run shell steps directly.
 
 ### Hybrid composite + Node.js action
@@ -127,10 +128,10 @@ The following secret must be set on this repository (Settings → Secrets and va
 
 | Action | Consumers use |
 |---|---|
-| `actions/sync-openapi` | `uses: fern-api/actions/sync-openapi@v4` |
-| `actions/setup-cli` | `uses: fern-api/actions/setup-cli@v1` |
-| `actions/preview` | `uses: fern-api/actions/preview@v1` _(alpha)_ |
-| `actions/generate` | `uses: fern-api/actions/generate@v1` _(alpha)_ |
-| `actions/upgrade` | `uses: fern-api/actions/upgrade@v1` _(alpha)_ |
-| `actions/verify` | `uses: fern-api/actions/verify@v1` _(alpha)_ |
-| `actions/example-action` | _(template only — not released)_ |
+| `sync-openapi` | `uses: fern-api/actions/sync-openapi@v4` |
+| `setup-cli` | `uses: fern-api/actions/setup-cli@v1` |
+| `preview` | `uses: fern-api/actions/preview@v1` _(alpha)_ |
+| `generate` | `uses: fern-api/actions/generate@v1` _(alpha)_ |
+| `upgrade` | `uses: fern-api/actions/upgrade@v1` _(alpha)_ |
+| `verify` | `uses: fern-api/actions/verify@v1` _(alpha)_ |
+| `example-action` | _(template only — not released)_ |

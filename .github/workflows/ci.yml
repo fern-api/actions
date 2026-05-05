@@ -81,13 +81,13 @@ jobs:
 
       - name: Verify bundles exist
         run: |
-          for action_dir in actions/*/; do
+          for action_dir in example-action preview upgrade verify; do
             # Skip composite actions (no package.json = no build output expected)
-            if [ ! -f "${action_dir}package.json" ]; then
+            if [ ! -f "${action_dir}/package.json" ]; then
               echo "SKIP: ${action_dir} is a composite action (no package.json)"
               continue
             fi
-            bundle="${action_dir}dist/index.js"
+            bundle="${action_dir}/dist/index.js"
             if [ ! -f "$bundle" ]; then
               echo "ERROR: Missing bundle at $bundle"
               exit 1
@@ -99,14 +99,14 @@ jobs:
         run: |
           # Only check actions that have a package.json (Node.js actions with build output)
           stale=""
-          for action_dir in actions/*/; do
-            [ -f "${action_dir}package.json" ] || continue
-            stale+="$(git status --porcelain "${action_dir}dist/")"
+          for action_dir in example-action preview upgrade verify; do
+            [ -f "${action_dir}/package.json" ] || continue
+            stale+="$(git status --porcelain "${action_dir}/dist/")"
           done
           if [ -n "$stale" ]; then
             echo "WARNING: dist/ files differ from committed versions."
             echo "Run 'pnpm build' and commit the results."
-            git diff --stat actions/*/dist/
+            git diff --stat ./*/dist/
           else
             echo "All dist/ files are up to date."
           fi

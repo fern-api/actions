@@ -1,0 +1,62 @@
+name: "Fern Generate"
+description: "Run fern automations generate to create SDK PRs for every (or a filtered subset of) generator."
+author: "Fern"
+
+inputs:
+  fern-token:
+    description: "FERN_TOKEN for authentication"
+    required: true
+  auto-merge:
+    description: "Enable automerge on non-breaking PRs"
+    required: false
+    default: "true"
+  group:
+    description: "Filter to a specific generator group"
+    required: false
+  api:
+    description: "Filter to a specific API in a multi-API repo (e.g. 'foo' for fern/apis/foo/)"
+    required: false
+  generator:
+    description: "Filter to a specific generator by 0-based index or name (e.g. '0' or 'fernapi/fern-python-sdk')"
+    required: false
+  version:
+    description: "Version strategy for generated packages"
+    required: false
+    default: "AUTO"
+
+runs:
+  using: composite
+  steps:
+    - name: Verify Fern token
+      uses: fern-api/actions/verify-token@main
+      with:
+        fern-token: ${{ inputs.fern-token }}
+
+    - name: Resolve Fern CLI
+      id: cli
+      uses: fern-api/actions/resolve-cli@main
+      with:
+        version: auto
+
+    - name: Run generators
+      shell: bash
+      env:
+        FERN_TOKEN: ${{ inputs.fern-token }}
+        GROUP: ${{ inputs.group }}
+        API: ${{ inputs.api }}
+        GENERATOR: ${{ inputs.generator }}
+        VERSION: ${{ inputs.version }}
+        AUTO_MERGE: ${{ inputs.auto-merge }}
+      run: |
+        ARGS=()
+        [ -n "$GROUP" ] && ARGS+=(--group "$GROUP")
+        [ -n "$API" ] && ARGS+=(--api "$API")
+        [ -n "$GENERATOR" ] && ARGS+=(--generator "$GENERATOR")
+        [ -n "$VERSION" ] && ARGS+=(--version "$VERSION")
+        [ "$AUTO_MERGE" = "true" ] && ARGS+=(--auto-merge)
+
+        ${{ steps.cli.outputs.fern-cmd }} automations generate "${ARGS[@]}"
+
+branding:
+  icon: "package"
+  color: "green"

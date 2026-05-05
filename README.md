@@ -28,7 +28,7 @@ uses: fern-api/actions/<action-name>@<version>
 
 ## Actions
 
-### [`setup-cli`](actions/setup-cli/README.md)
+### [`setup-cli`](setup-cli/README.md)
 
 Install the Fern CLI in your workflow.
 
@@ -41,7 +41,7 @@ Install the Fern CLI in your workflow.
 
 ---
 
-### [`sync-openapi`](actions/sync-openapi/README.md)
+### [`sync-openapi`](sync-openapi/README.md)
 
 Keep your Fern config up to date — pull OpenAPI specs from a public URL or sync files between repositories, and open a PR with the changes.
 
@@ -54,7 +54,7 @@ Keep your Fern config up to date — pull OpenAPI specs from a public URL or syn
 
 ---
 
-### [`generate`](actions/generate/action.yml) _(alpha)_
+### [`generate`](generate/action.yml) _(alpha)_
 
 Run `fern generate` on push to `main` and open SDK PRs in SDK repos. Includes breaking change detection and failure issue management.
 
@@ -66,7 +66,7 @@ Run `fern generate` on push to `main` and open SDK PRs in SDK repos. Includes br
 
 ---
 
-### [`upgrade`](actions/upgrade/action.yml) _(alpha)_
+### [`upgrade`](upgrade/action.yml) _(alpha)_
 
 Upgrade Fern CLI and generator versions on a schedule and open or update a single shared PR.
 
@@ -78,7 +78,7 @@ Upgrade Fern CLI and generator versions on a schedule and open or update a singl
 
 ---
 
-### [`verify`](actions/verify/action.yml) _(alpha)_
+### [`verify`](verify/action.yml) _(alpha)_
 
 Validate Fern changes on PRs before merge — runs generation, self-verification, and breaking change detection. Enables automerge on clean PRs, requests reviewers on failures.
 
