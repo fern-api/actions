@@ -28,3 +28,22 @@ export function getOrCreateRunId(): string {
 export function getGithubRunId(): string {
   return process.env.GITHUB_RUN_ID ?? "";
 }
+
+/**
+ * Returns the click-through URL for the current GitHub Actions run. Used in
+ * telemetry events (`github_run_url`), Slack alerts, and SDK PR body footer
+ * markers so a human reading any of those can jump straight to the run page.
+ *
+ * Built from the GitHub-provided env vars `GITHUB_SERVER_URL`,
+ * `GITHUB_REPOSITORY`, and `GITHUB_RUN_ID`. Returns an empty string if any
+ * piece is missing (e.g. when invoked outside a GitHub Actions runner).
+ */
+export function getGithubRunUrl(): string {
+  const serverUrl = process.env.GITHUB_SERVER_URL;
+  const repository = process.env.GITHUB_REPOSITORY;
+  const runId = process.env.GITHUB_RUN_ID;
+  if (!serverUrl || !repository || !runId) {
+    return "";
+  }
+  return `${serverUrl}/${repository}/actions/runs/${runId}`;
+}

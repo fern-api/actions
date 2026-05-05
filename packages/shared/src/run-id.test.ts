@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getGithubRunId, getOrCreateRunId } from "./run-id.js";
+import { getGithubRunId, getGithubRunUrl, getOrCreateRunId } from "./run-id.js";
 
 vi.mock("@actions/core");
 
@@ -58,5 +58,54 @@ describe("getGithubRunId", () => {
     // biome-ignore lint/performance/noDelete: process.env coerces to string, delete is required to unset
     delete process.env.GITHUB_RUN_ID;
     expect(getGithubRunId()).toBe("");
+  });
+});
+
+describe("getGithubRunUrl", () => {
+  beforeEach(() => {
+    // biome-ignore lint/performance/noDelete: process.env coerces to string, delete is required to unset
+    delete process.env.GITHUB_SERVER_URL;
+    // biome-ignore lint/performance/noDelete: process.env coerces to string, delete is required to unset
+    delete process.env.GITHUB_REPOSITORY;
+    // biome-ignore lint/performance/noDelete: process.env coerces to string, delete is required to unset
+    delete process.env.GITHUB_RUN_ID;
+  });
+
+  afterEach(() => {
+    // biome-ignore lint/performance/noDelete: process.env coerces to string, delete is required to unset
+    delete process.env.GITHUB_SERVER_URL;
+    // biome-ignore lint/performance/noDelete: process.env coerces to string, delete is required to unset
+    delete process.env.GITHUB_REPOSITORY;
+    // biome-ignore lint/performance/noDelete: process.env coerces to string, delete is required to unset
+    delete process.env.GITHUB_RUN_ID;
+  });
+
+  it("builds the run URL from GITHUB_SERVER_URL, GITHUB_REPOSITORY, and GITHUB_RUN_ID", () => {
+    process.env.GITHUB_SERVER_URL = "https://github.com";
+    process.env.GITHUB_REPOSITORY = "square/fern-config";
+    process.env.GITHUB_RUN_ID = "1234567890";
+
+    expect(getGithubRunUrl()).toBe("https://github.com/square/fern-config/actions/runs/1234567890");
+  });
+
+  it("returns empty string when GITHUB_SERVER_URL is missing", () => {
+    process.env.GITHUB_REPOSITORY = "square/fern-config";
+    process.env.GITHUB_RUN_ID = "1234567890";
+
+    expect(getGithubRunUrl()).toBe("");
+  });
+
+  it("returns empty string when GITHUB_REPOSITORY is missing", () => {
+    process.env.GITHUB_SERVER_URL = "https://github.com";
+    process.env.GITHUB_RUN_ID = "1234567890";
+
+    expect(getGithubRunUrl()).toBe("");
+  });
+
+  it("returns empty string when GITHUB_RUN_ID is missing", () => {
+    process.env.GITHUB_SERVER_URL = "https://github.com";
+    process.env.GITHUB_REPOSITORY = "square/fern-config";
+
+    expect(getGithubRunUrl()).toBe("");
   });
 });
