@@ -1,8 +1,10 @@
 import * as core from "@actions/core";
 import * as exec from "@actions/exec";
 import {
+  WrapperError,
   getOptionalInput,
   getRequiredInput,
+  injectFernToken,
   instrumentAction,
   isPostPhase,
   markMainPhaseStarted,
@@ -44,16 +46,24 @@ runAction(async () => {
   await instrumentAction("sync-openapi", async () => {
     const inputs = parseInputs();
     core.setSecret(inputs.token);
+    injectFernToken(inputs.token);
 
     const cli = await resolveFernCli(inputs.version);
     const env = { ...process.env, FERN_TOKEN: inputs.token };
 
-    if (inputs.updateFromSource) {
-      const args = buildPullSpecArgs(inputs);
-      await exec.exec(cli.command, [...cli.leadingArgs, "gha", "pull-spec", ...args], { env });
-    } else {
-      const args = buildSyncSpecsArgs(inputs);
-      await exec.exec(cli.command, [...cli.leadingArgs, "gha", "sync-specs", ...args], { env });
+    const subcommand = inputs.updateFromSource ? "pull-spec" : "sync-specs";
+    const args = inputs.updateFromSource ? buildPullSpecArgs(inputs) : buildSyncSpecsArgs(inputs);
+    const errorCode =
+      subcommand === "pull-spec" ? "CLI_GHA_PULL_SPEC_FAILED" : "CLI_GHA_SYNC_SPECS_FAILED";
+
+    try {
+      await exec.exec(cli.command, [...cli.leadingArgs, "gha", subcommand, ...args], { env });
+    } catch (err) {
+      throw new WrapperError({
+        errorCode,
+        message: err instanceof Error ? err.message : String(err),
+        originalError: err,
+      });
     }
   });
 });

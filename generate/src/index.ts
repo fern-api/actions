@@ -1,9 +1,11 @@
 import * as core from "@actions/core";
 import * as exec from "@actions/exec";
 import {
+  WrapperError,
   getOptionalInput,
   getOrCreateRunId,
   getRequiredFernToken,
+  injectFernToken,
   instrumentAction,
   isPostPhase,
   markMainPhaseStarted,
@@ -42,13 +44,22 @@ runAction(async () => {
 
   await instrumentAction("generate", async () => {
     const inputs = parseInputs();
+    injectFernToken(inputs.fernToken);
     getOrCreateRunId();
 
     const cli = await resolveFernCli("auto");
     const userArgs = buildGenerateArgs(inputs);
 
-    await exec.exec(cli.command, [...cli.leadingArgs, "automations", "generate", ...userArgs], {
-      env: { ...process.env, FERN_TOKEN: inputs.fernToken },
-    });
+    try {
+      await exec.exec(cli.command, [...cli.leadingArgs, "automations", "generate", ...userArgs], {
+        env: { ...process.env, FERN_TOKEN: inputs.fernToken },
+      });
+    } catch (err) {
+      throw new WrapperError({
+        errorCode: "CLI_AUTOMATIONS_GENERATE_FAILED",
+        message: err instanceof Error ? err.message : String(err),
+        originalError: err,
+      });
+    }
   });
 });
