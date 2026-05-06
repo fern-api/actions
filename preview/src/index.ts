@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 import {
   getOptionalInput,
+  getOrCreateRunId,
   getRequiredFernToken,
   installFernCli,
   instrumentAction,
@@ -29,6 +30,9 @@ function parseInputs(): ActionInputs {
 }
 
 async function run(inputs: ActionInputs): Promise<void> {
+  const runId = getOrCreateRunId();
+  core.setOutput("run-id", runId);
+
   await installFernCli(inputs.fernVersion);
 
   const results = await runAutomationsPreview({ fernToken: inputs.fernToken });

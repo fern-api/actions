@@ -18,6 +18,8 @@ inputs:
 outputs:
   results:
     description: "JSON array of preview results (status, groupName, packageName, installCommand, version)"
+  run-id:
+    description: "FERN_RUN_ID for this preview run (UUIDv4)"
 
 runs:
   using: "node20"

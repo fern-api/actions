@@ -23970,7 +23970,7 @@ var require_dist = __commonJS({
     __export2(index_exports, {
       getGithubRunId: () => getGithubRunId,
       getOptionalInput: () => getOptionalInput2,
-      getOrCreateRunId: () => getOrCreateRunId,
+      getOrCreateRunId: () => getOrCreateRunId2,
       getRequiredFernToken: () => getRequiredFernToken2,
       getRequiredInput: () => getRequiredInput,
       installFernCli: () => installFernCli2,
@@ -23986,7 +23986,7 @@ var require_dist = __commonJS({
     });
     module2.exports = __toCommonJS2(index_exports);
     var core4 = __toESM2(require_core());
-    function getOrCreateRunId() {
+    function getOrCreateRunId2() {
       const existing = process.env.FERN_RUN_ID;
       if (existing) {
         core4.debug(`Inheriting FERN_RUN_ID from environment: ${existing}`);
@@ -24011,7 +24011,7 @@ var require_dist = __commonJS({
     }
     function recordStart(action, attributes) {
       const startedAt = Date.now();
-      const fernRunId = getOrCreateRunId();
+      const fernRunId = getOrCreateRunId2();
       const githubRunId = getGithubRunId();
       emit({ action, phase: "start", fernRunId, githubRunId, attributes });
       core22.saveState(STATE_START_TIME, String(startedAt));
@@ -24033,7 +24033,7 @@ var require_dist = __commonJS({
       emit({
         action,
         phase: "error",
-        fernRunId: getOrCreateRunId(),
+        fernRunId: getOrCreateRunId2(),
         githubRunId: getGithubRunId(),
         error: message,
         attributes
@@ -24426,6 +24426,8 @@ function parseInputs() {
   };
 }
 async function run(inputs) {
+  const runId = (0, import_shared.getOrCreateRunId)();
+  core3.setOutput("run-id", runId);
   await (0, import_shared.installFernCli)(inputs.fernVersion);
   const results = await runAutomationsPreview({ fernToken: inputs.fernToken });
   if (results.length === 0) {
