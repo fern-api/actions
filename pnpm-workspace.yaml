@@ -1,6 +1,11 @@
 packages:
   - "example-action"
+  - "generate"
   - "preview"
+  - "resolve-cli"
+  - "setup-cli"
+  - "sync-openapi"
   - "upgrade"
   - "verify"
+  - "verify-token"
   - "packages/*"

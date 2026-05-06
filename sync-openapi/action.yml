@@ -29,47 +29,9 @@ inputs:
     default: "false"
 
 runs:
-  using: composite
-  steps:
-    - name: Resolve Fern CLI
-      id: cli
-      uses: fern-api/actions/resolve-cli@main
-      with:
-        version: ${{ inputs.version }}
-
-    - name: Pull spec from origin
-      if: inputs.update_from_source == 'true'
-      shell: bash
-      env:
-        FERN_TOKEN: ${{ inputs.token }}
-        TOKEN: ${{ inputs.token }}
-        BRANCH: ${{ inputs.branch }}
-        AUTO_MERGE: ${{ inputs.auto_merge }}
-      run: |
-        ARGS=()
-        ARGS+=(--token "$TOKEN")
-        [ -n "$BRANCH" ] && ARGS+=(--branch "$BRANCH")
-        [ "$AUTO_MERGE" = "true" ] && ARGS+=(--auto-merge)
-        ${{ steps.cli.outputs.fern-cmd }} gha pull-spec "${ARGS[@]}"
-
-    - name: Sync files to target repository
-      if: inputs.update_from_source != 'true'
-      shell: bash
-      env:
-        FERN_TOKEN: ${{ inputs.token }}
-        REPOSITORY: ${{ inputs.repository }}
-        SOURCES: ${{ inputs.sources }}
-        TOKEN: ${{ inputs.token }}
-        BRANCH: ${{ inputs.branch }}
-        AUTO_MERGE: ${{ inputs.auto_merge }}
-      run: |
-        ARGS=()
-        ARGS+=(--repository "$REPOSITORY")
-        ARGS+=(--sources "$SOURCES")
-        ARGS+=(--token "$TOKEN")
-        [ -n "$BRANCH" ] && ARGS+=(--branch "$BRANCH")
-        [ "$AUTO_MERGE" = "true" ] && ARGS+=(--auto-merge)
-        ${{ steps.cli.outputs.fern-cmd }} gha sync-specs "${ARGS[@]}"
+  using: "node20"
+  main: "dist/index.js"
+  post: "dist/index.js"
 
 branding:
   icon: "refresh-cw"

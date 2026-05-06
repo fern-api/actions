@@ -1,5 +1,13 @@
 import * as core from "@actions/core";
-import { getOrCreateRunId, getRequiredInput, runAction } from "@fern-github-actions/shared";
+import {
+  getOrCreateRunId,
+  getRequiredFernToken,
+  instrumentAction,
+  isPostPhase,
+  markMainPhaseStarted,
+  runAction,
+  runPostCleanup,
+} from "@fern-github-actions/shared";
 
 interface ActionInputs {
   fernToken: string;
@@ -7,7 +15,7 @@ interface ActionInputs {
 
 function parseInputs(): ActionInputs {
   return {
-    fernToken: getRequiredInput("fern-token"),
+    fernToken: getRequiredFernToken(),
   };
 }
 
@@ -28,6 +36,14 @@ async function run(_inputs: ActionInputs): Promise<void> {
 }
 
 runAction(async () => {
-  const inputs = parseInputs();
-  await run(inputs);
+  if (isPostPhase()) {
+    runPostCleanup();
+    return;
+  }
+  markMainPhaseStarted();
+
+  await instrumentAction("upgrade", async () => {
+    const inputs = parseInputs();
+    await run(inputs);
+  });
 });

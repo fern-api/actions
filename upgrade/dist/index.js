@@ -19853,9 +19853,18 @@ var require_dist = __commonJS({
       getGithubRunId: () => getGithubRunId,
       getOptionalInput: () => getOptionalInput,
       getOrCreateRunId: () => getOrCreateRunId2,
-      getRequiredInput: () => getRequiredInput2,
+      getRequiredFernToken: () => getRequiredFernToken2,
+      getRequiredInput: () => getRequiredInput,
+      installFernCli: () => installFernCli,
+      instrumentAction: () => instrumentAction2,
+      isPostPhase: () => isPostPhase2,
+      markMainPhaseStarted: () => markMainPhaseStarted2,
       parseRepository: () => parseRepository,
-      runAction: () => runAction2
+      recordError: () => recordError,
+      recordStart: () => recordStart,
+      resolveFernCli: () => resolveFernCli,
+      runAction: () => runAction2,
+      runPostCleanup: () => runPostCleanup2
     });
     module2.exports = __toCommonJS(index_exports);
     var core2 = __toESM2(require_core());
@@ -19874,15 +19883,147 @@ var require_dist = __commonJS({
       return process.env.GITHUB_RUN_ID ?? "";
     }
     var core22 = __toESM2(require_core());
-    function getRequiredInput2(name) {
-      const value = core22.getInput(name, { required: true });
+    var TELEMETRY_PREFIX = "::fern-telemetry::";
+    var STATE_START_TIME = "fern_telemetry_start_ms";
+    var STATE_ACTION_NAME = "fern_telemetry_action";
+    var STATE_MAIN_ERRORED = "fern_telemetry_main_errored";
+    var STATE_FERN_RUN_ID = "fern_telemetry_run_id";
+    function emit(event) {
+      core22.info(`${TELEMETRY_PREFIX}${JSON.stringify(event)}`);
+    }
+    function recordStart(action, attributes) {
+      const startedAt = Date.now();
+      const fernRunId = getOrCreateRunId2();
+      const githubRunId = getGithubRunId();
+      emit({ action, phase: "start", fernRunId, githubRunId, attributes });
+      core22.saveState(STATE_START_TIME, String(startedAt));
+      core22.saveState(STATE_ACTION_NAME, action);
+      core22.saveState(STATE_FERN_RUN_ID, fernRunId);
+      return () => {
+        emit({
+          action,
+          phase: "end",
+          fernRunId,
+          githubRunId,
+          durationMs: Date.now() - startedAt
+        });
+      };
+    }
+    function recordError(action, err, attributes) {
+      const message = err instanceof Error ? err.message : String(err);
+      core22.saveState(STATE_MAIN_ERRORED, "true");
+      emit({
+        action,
+        phase: "error",
+        fernRunId: getOrCreateRunId2(),
+        githubRunId: getGithubRunId(),
+        error: message,
+        attributes
+      });
+    }
+    async function instrumentAction2(action, fn, attributes) {
+      const finish = recordStart(action, attributes);
+      try {
+        await fn();
+        finish();
+      } catch (err) {
+        recordError(action, err, attributes);
+        throw err;
+      }
+    }
+    function runPostCleanup2() {
+      const startedAtRaw = core22.getState(STATE_START_TIME);
+      const action = core22.getState(STATE_ACTION_NAME);
+      const fernRunId = core22.getState(STATE_FERN_RUN_ID);
+      if (!startedAtRaw || !action || !fernRunId) {
+        return;
+      }
+      const startedAt = Number(startedAtRaw);
+      if (!Number.isFinite(startedAt)) {
+        return;
+      }
+      const mainErrored = core22.getState(STATE_MAIN_ERRORED) === "true";
+      emit({
+        action,
+        phase: "post",
+        fernRunId,
+        githubRunId: getGithubRunId(),
+        durationMs: Date.now() - startedAt,
+        mainErrored
+      });
+    }
+    var core3 = __toESM2(require_core());
+    var STATE_IS_POST = "fern_is_post";
+    function markMainPhaseStarted2() {
+      core3.saveState(STATE_IS_POST, "true");
+    }
+    function isPostPhase2() {
+      return core3.getState(STATE_IS_POST) === "true";
+    }
+    var core4 = __toESM2(require_core());
+    var io = __toESM2(require_io());
+    async function resolveFernCli(version) {
+      let resolved;
+      if (version === "auto") {
+        resolved = { command: "npx", leadingArgs: ["--yes", "fern-api@latest"] };
+      } else if (version === "inherit") {
+        const fernPath = await io.which("fern", false);
+        if (!fernPath) {
+          throw new Error("version is 'inherit' but fern is not on PATH.");
+        }
+        core4.exportVariable("FERN_NO_VERSION_REDIRECTION", "true");
+        resolved = { command: "fern", leadingArgs: [] };
+      } else {
+        core4.exportVariable("FERN_NO_VERSION_REDIRECTION", "true");
+        resolved = { command: "npx", leadingArgs: ["--yes", `fern-api@${version}`] };
+      }
+      core4.info(`Using Fern CLI: ${[resolved.command, ...resolved.leadingArgs].join(" ")}`);
+      return resolved;
+    }
+    var core5 = __toESM2(require_core());
+    var exec = __toESM2(require_exec());
+    var io2 = __toESM2(require_io());
+    async function installFernCli(version) {
+      const npm = await io2.which("npm", false);
+      if (!npm) {
+        throw new Error("npm is not available. Please add a Node.js setup step before this action.");
+      }
+      const node = await io2.which("node", false);
+      if (!node) {
+        throw new Error("node is not available. Please add a Node.js setup step before this action.");
+      }
+      const pkg = version === "latest" || version === "auto" ? "fern-api" : `fern-api@${version}`;
+      await exec.exec("npm", ["install", "-g", pkg]);
+      let stdout = "";
+      await exec.exec("fern", ["--version"], {
+        env: { ...process.env, FERN_NO_VERSION_REDIRECTION: "true" },
+        listeners: {
+          stdout: (data) => {
+            stdout += data.toString();
+          }
+        }
+      });
+      core5.info(`Installed Fern CLI version ${stdout.trim()}`);
+    }
+    var core6 = __toESM2(require_core());
+    function getRequiredInput(name) {
+      const value = core6.getInput(name, { required: true });
       if (!value) {
         throw new Error(`Input '${name}' is required but was not provided.`);
       }
       return value;
     }
+    var FERN_TOKEN_HELP = "FERN_TOKEN is not set. Add it as a repository secret (Settings \u2192 Secrets and variables \u2192 Actions \u2192 New repository secret) and reference it in your workflow as fern-token: ${{ secrets.FERN_TOKEN }}";
+    function getRequiredFernToken2() {
+      const value = core6.getInput("fern-token");
+      if (!value) {
+        throw new Error(FERN_TOKEN_HELP);
+      }
+      core6.setSecret(value);
+      return value;
+    }
     function getOptionalInput(name) {
-      const value = core22.getInput(name);
+      const value = core6.getInput(name);
       return value || void 0;
     }
     async function runAction2(fn) {
@@ -19890,7 +20031,7 @@ var require_dist = __commonJS({
         await fn();
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        core22.setFailed(message);
+        core6.setFailed(message);
         process.exit(1);
       }
     }
@@ -19913,7 +20054,7 @@ var core = __toESM(require_core());
 var import_shared = __toESM(require_dist());
 function parseInputs() {
   return {
-    fernToken: (0, import_shared.getRequiredInput)("fern-token")
+    fernToken: (0, import_shared.getRequiredFernToken)()
   };
 }
 async function run(_inputs) {
@@ -19925,8 +20066,15 @@ async function run(_inputs) {
   core.setOutput("generators-upgraded", JSON.stringify([]));
 }
 (0, import_shared.runAction)(async () => {
-  const inputs = parseInputs();
-  await run(inputs);
+  if ((0, import_shared.isPostPhase)()) {
+    (0, import_shared.runPostCleanup)();
+    return;
+  }
+  (0, import_shared.markMainPhaseStarted)();
+  await (0, import_shared.instrumentAction)("upgrade", async () => {
+    const inputs = parseInputs();
+    await run(inputs);
+  });
 });
 /*! Bundled license information:
 

@@ -19,7 +19,9 @@
     "dev": "tsup --watch"
   },
   "dependencies": {
-    "@actions/core": "^1.10.0"
+    "@actions/core": "^1.10.0",
+    "@actions/exec": "^1.1.1",
+    "@actions/io": "^1.1.3"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
