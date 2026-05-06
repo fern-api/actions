@@ -25,37 +25,9 @@ inputs:
     default: "AUTO"
 
 runs:
-  using: composite
-  steps:
-    - name: Verify Fern token
-      uses: fern-api/actions/verify-token@main
-      with:
-        fern-token: ${{ inputs.fern-token }}
-
-    - name: Resolve Fern CLI
-      id: cli
-      uses: fern-api/actions/resolve-cli@main
-      with:
-        version: auto
-
-    - name: Run generators
-      shell: bash
-      env:
-        FERN_TOKEN: ${{ inputs.fern-token }}
-        GROUP: ${{ inputs.group }}
-        API: ${{ inputs.api }}
-        GENERATOR: ${{ inputs.generator }}
-        VERSION: ${{ inputs.version }}
-        AUTO_MERGE: ${{ inputs.auto-merge }}
-      run: |
-        ARGS=()
-        [ -n "$GROUP" ] && ARGS+=(--group "$GROUP")
-        [ -n "$API" ] && ARGS+=(--api "$API")
-        [ -n "$GENERATOR" ] && ARGS+=(--generator "$GENERATOR")
-        [ -n "$VERSION" ] && ARGS+=(--version "$VERSION")
-        [ "$AUTO_MERGE" = "true" ] && ARGS+=(--auto-merge)
-
-        ${{ steps.cli.outputs.fern-cmd }} automations generate "${ARGS[@]}"
+  using: "node20"
+  main: "dist/index.js"
+  post: "dist/index.js"
 
 branding:
   icon: "package"

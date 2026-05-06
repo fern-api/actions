@@ -18,54 +18,8 @@ inputs:
 outputs:
   run-id:
     description: "The FERN_RUN_ID for this workflow run — inherited from the environment if already set, otherwise newly generated."
-    value: ${{ steps.run-id.outputs.run-id }}
 
 runs:
-  using: composite
-  steps:
-    - name: Set FERN_RUN_ID
-      id: run-id
-      shell: bash
-      run: |
-        if [ -z "${FERN_RUN_ID}" ]; then
-          FERN_RUN_ID=$(node -e "console.log(require('crypto').randomUUID())")
-          echo "FERN_RUN_ID=${FERN_RUN_ID}" >> "$GITHUB_ENV"
-          echo "Generated new FERN_RUN_ID: ${FERN_RUN_ID}"
-        else
-          echo "Inheriting existing FERN_RUN_ID: ${FERN_RUN_ID}"
-        fi
-        echo "run-id=${FERN_RUN_ID}" >> "$GITHUB_OUTPUT"
-
-    - name: Install Fern CLI
-      shell: bash
-      env:
-        VERSION: ${{ inputs.version }}
-        REPO_REF: ${{ inputs.repo-ref }}
-      run: |
-        if ! command -v npm &>/dev/null; then
-          echo "::error::npm is not available. Please add a Node.js setup step before this action."
-          exit 1
-        fi
-        if ! command -v node &>/dev/null; then
-          echo "::error::node is not available. Please add a Node.js setup step before this action."
-          exit 1
-        fi
-
-        if [ -n "$REPO_REF" ]; then
-          echo "Building Fern CLI from source (ref: $REPO_REF)"
-          BUILD_DIR=$(mktemp -d "${TMPDIR:-/tmp}/fern-cli-build-XXXXXX")
-          git clone --branch "$REPO_REF" --depth 1 https://github.com/fern-api/fern.git "$BUILD_DIR"
-          corepack enable
-          (cd "$BUILD_DIR" && corepack prepare --activate)
-          (cd "$BUILD_DIR" && pnpm install --frozen-lockfile)
-          (cd "$BUILD_DIR" && pnpm turbo run dist:cli:prod --filter @fern-api/cli)
-          CLI_PATH="$BUILD_DIR/packages/cli/cli/dist/prod/cli.cjs"
-          printf '#!/usr/bin/env node\nrequire("%s");\n' "$CLI_PATH" > /usr/local/bin/fern
-          chmod +x /usr/local/bin/fern
-        else
-          PKG="fern-api"
-          [ "$VERSION" != "latest" ] && [ "$VERSION" != "auto" ] && PKG="fern-api@$VERSION"
-          npm install -g "$PKG"
-        fi
-
-        echo "Installed Fern CLI version $(FERN_NO_VERSION_REDIRECTION=true fern --version)"
+  using: "node20"
+  main: "dist/index.js"
+  post: "dist/index.js"

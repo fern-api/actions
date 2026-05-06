@@ -1,5 +1,9 @@
 export * from "./types.js";
 export * from "./run-id.js";
+export * from "./telemetry.js";
+export * from "./post-phase.js";
+export * from "./fern-cli.js";
+export * from "./install-cli.js";
 
 import * as core from "@actions/core";
 import type { Repository } from "./types.js";
@@ -12,6 +16,25 @@ export function getRequiredInput(name: string): string {
   if (!value) {
     throw new Error(`Input '${name}' is required but was not provided.`);
   }
+  return value;
+}
+
+const FERN_TOKEN_HELP =
+  "FERN_TOKEN is not set. Add it as a repository secret " +
+  "(Settings → Secrets and variables → Actions → New repository secret) " +
+  "and reference it in your workflow as fern-token: ${{ secrets.FERN_TOKEN }}";
+
+/**
+ * Gets the `fern-token` input, throwing the same actionable error message
+ * that the verify-token action uses. Also masks the value via `core.setSecret`
+ * so it cannot leak into action logs.
+ */
+export function getRequiredFernToken(): string {
+  const value = core.getInput("fern-token");
+  if (!value) {
+    throw new Error(FERN_TOKEN_HELP);
+  }
+  core.setSecret(value);
   return value;
 }
 

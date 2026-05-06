@@ -1,5 +1,12 @@
 import * as core from "@actions/core";
-import { getRequiredInput, runAction } from "@fern-github-actions/shared";
+import {
+  getRequiredInput,
+  instrumentAction,
+  isPostPhase,
+  markMainPhaseStarted,
+  runAction,
+  runPostCleanup,
+} from "@fern-github-actions/shared";
 
 interface ActionInputs {
   githubToken: string;
@@ -30,6 +37,14 @@ async function run(inputs: ActionInputs): Promise<void> {
 }
 
 runAction(async () => {
-  const inputs = parseInputs();
-  await run(inputs);
+  if (isPostPhase()) {
+    runPostCleanup();
+    return;
+  }
+  markMainPhaseStarted();
+
+  await instrumentAction("example-action", async () => {
+    const inputs = parseInputs();
+    await run(inputs);
+  });
 });

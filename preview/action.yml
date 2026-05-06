@@ -1,6 +1,7 @@
 name: "Fern SDK Preview"
 description: "Auto-detect TypeScript SDK groups, publish preview packages, and post PR comments with install links and SDK diff links"
 author: "Fern"
+
 inputs:
   fern-token:
     description: "Fern authentication token (FERN_TOKEN)"
@@ -9,39 +10,20 @@ inputs:
     description: "Fern CLI version to install. 'auto' (default) installs the latest release; the CLI self-redirects to the version pinned in fern.config.json at runtime. Use 'latest' for the newest release, or pin to a specific version (e.g. '3.98.5')."
     required: false
     default: "auto"
+  github-token:
+    description: "GitHub token used to post the PR comment. Defaults to ${{ github.token }}."
+    required: false
+    default: ${{ github.token }}
+
 outputs:
   results:
     description: "JSON array of preview results (status, groupName, packageName, installCommand, version)"
-    value: ${{ steps.preview.outputs.results }}
+
 runs:
-  using: "composite"
-  steps:
-    - name: Resolve CLI version
-      id: cli-version
-      shell: bash
-      run: |
-        VERSION="$FERN_VERSION_INPUT"
-        # Normalize 'auto' to 'latest' for setup-cli. The CLI handles
-        # version redirection at runtime via fern.config.json.
-        if [ "$VERSION" = "auto" ]; then
-          VERSION="latest"
-        fi
-        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-      env:
-        FERN_VERSION_INPUT: ${{ inputs.fern-version }}
+  using: "node20"
+  main: "dist/index.js"
+  post: "dist/index.js"
 
-    # TODO: pin to a release tag once setup-cli has one (e.g. setup-cli@v1)
-    - uses: fern-api/actions/actions/setup-cli@f5696be181b71b00b61a8816e9b06cc176f569b8
-      with:
-        version: ${{ steps.cli-version.outputs.version }}
-
-    - name: Run preview
-      id: preview
-      shell: bash
-      run: node ${{ github.action_path }}/dist/index.js
-      env:
-        INPUT_FERN-TOKEN: ${{ inputs.fern-token }}
-        GITHUB_TOKEN: ${{ github.token }}
 branding:
   icon: "package"
   color: "green"
