@@ -3,6 +3,7 @@ import {
   getOptionalInput,
   getOrCreateRunId,
   getRequiredFernToken,
+  injectFernToken,
   instrumentAction,
   isPostPhase,
   markMainPhaseStarted,
@@ -49,6 +50,7 @@ runAction(async () => {
 
   await instrumentAction("verify", async () => {
     const inputs = parseInputs();
+    injectFernToken(inputs.fernToken);
     await run(inputs);
   });
 });

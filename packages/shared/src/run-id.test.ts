@@ -54,9 +54,9 @@ describe("getGithubRunId", () => {
     expect(getGithubRunId()).toBe("12345678");
   });
 
-  it("returns empty string when GITHUB_RUN_ID is not set", () => {
+  it("returns undefined when GITHUB_RUN_ID is not set", () => {
     // biome-ignore lint/performance/noDelete: process.env coerces to string, delete is required to unset
     delete process.env.GITHUB_RUN_ID;
-    expect(getGithubRunId()).toBe("");
+    expect(getGithubRunId()).toBeUndefined();
   });
 });
