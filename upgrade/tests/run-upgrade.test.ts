@@ -4,6 +4,7 @@ import type { AutomationsUpgradeJson } from "../src/run-upgrade.js";
 describe("AutomationsUpgradeJson schema", () => {
   it("accepts a complete upgrade result with pr suggestion", () => {
     const json: AutomationsUpgradeJson = {
+      schemaVersion: 1,
       cli: { from: "4.66.0", to: "5.7.3", upgraded: true },
       generators: [
         {
@@ -21,7 +22,7 @@ describe("AutomationsUpgradeJson schema", () => {
       pr: {
         title: "chore(fern): upgrade CLI 4.66.0 → 5.7.3 and 1 generator",
         body: "## Fern Upgrade\n...",
-        commitMessage: "chore: upgrade fern cli 4.66.0 → 5.7.3, typescript-sdk 3.63.4 → 3.65.5",
+        commitMessage: "chore: upgrade fern cli 4.66.0 -> 5.7.3, typescript-sdk 3.63.4 -> 3.65.5",
       },
     };
 
@@ -33,6 +34,7 @@ describe("AutomationsUpgradeJson schema", () => {
 
   it("accepts null pr when nothing changed", () => {
     const json: AutomationsUpgradeJson = {
+      schemaVersion: 1,
       cli: { from: "5.7.3", to: "5.7.3", upgraded: false },
       generators: [],
       skippedMajor: [],
@@ -47,6 +49,7 @@ describe("AutomationsUpgradeJson schema", () => {
 
   it("validates generators have expected fields", () => {
     const json: AutomationsUpgradeJson = {
+      schemaVersion: 1,
       cli: { from: "5.0.0", to: "5.7.3", upgraded: true },
       generators: [
         {
@@ -64,7 +67,7 @@ describe("AutomationsUpgradeJson schema", () => {
       pr: {
         title: "chore(fern): upgrade CLI 5.0.0 → 5.7.3 and 1 generator",
         body: "## Fern Upgrade\n...",
-        commitMessage: "chore: upgrade fern cli 5.0.0 → 5.7.3, python-sdk 4.3.0 → 5.9.1",
+        commitMessage: "chore: upgrade fern cli 5.0.0 -> 5.7.3, python-sdk 4.3.0 -> 5.9.1",
       },
     };
 

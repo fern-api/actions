@@ -1,4 +1,5 @@
-import * as exec from "@actions/exec";
+import { spawn } from "node:child_process";
+import * as core from "@actions/core";
 import type { ResolvedFernCli } from "@fern-github-actions/shared";
 
 export interface GeneratorUpgradeEntry {
@@ -18,6 +19,7 @@ export interface PrSuggestion {
 }
 
 export interface AutomationsUpgradeJson {
+  schemaVersion: number;
   cli: {
     from: string;
     to: string;
@@ -51,22 +53,45 @@ export async function runAutomationsUpgrade({
 
   let stdout = "";
   let stderr = "";
-  const exitCode = await withTimeout(
-    exec.exec(cli.command, args, {
+
+  const exitCode = await new Promise<number>((resolve, reject) => {
+    const child = spawn(cli.command, args, {
       env: { ...process.env, FERN_TOKEN: fernToken },
-      listeners: {
-        stdout: (data: Buffer) => {
-          stdout += data.toString();
-        },
-        stderr: (data: Buffer) => {
-          stderr += data.toString();
-        },
-      },
-      ignoreReturnCode: true,
-    }),
-    UPGRADE_TIMEOUT_MS,
-    `fern automations upgrade timed out after ${UPGRADE_TIMEOUT_MS / 60000} minutes`
-  );
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    child.stdout.on("data", (data: Buffer) => {
+      stdout += data.toString();
+    });
+    child.stderr.on("data", (data: Buffer) => {
+      const chunk = data.toString();
+      stderr += chunk;
+      core.info(chunk.trimEnd());
+    });
+
+    const timer = setTimeout(() => {
+      child.kill("SIGTERM");
+      // Give the process a few seconds to clean up, then force-kill
+      setTimeout(() => {
+        if (!child.killed) {
+          child.kill("SIGKILL");
+        }
+      }, 5000);
+      reject(
+        new Error(`fern automations upgrade timed out after ${UPGRADE_TIMEOUT_MS / 60000} minutes`)
+      );
+    }, UPGRADE_TIMEOUT_MS);
+
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      resolve(code ?? 1);
+    });
+
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+  });
 
   if (exitCode !== 0) {
     throw new Error(
@@ -89,12 +114,4 @@ export async function runAutomationsUpgrade({
   }
 
   return parsed;
-}
-
-function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
-  let timer: ReturnType<typeof setTimeout>;
-  const timeout = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(() => reject(new Error(message)), ms);
-  });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }

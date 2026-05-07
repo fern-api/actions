@@ -17598,12 +17598,12 @@ var require_lib = __commonJS({
             throw new Error("Client has already been disposed.");
           }
           const parsedUrl = new URL(requestUrl);
-          let info3 = this._prepareRequest(verb, parsedUrl, headers);
+          let info4 = this._prepareRequest(verb, parsedUrl, headers);
           const maxTries = this._allowRetries && RetryableHttpVerbs.includes(verb) ? this._maxRetries + 1 : 1;
           let numTries = 0;
           let response;
           do {
-            response = yield this.requestRaw(info3, data);
+            response = yield this.requestRaw(info4, data);
             if (response && response.message && response.message.statusCode === HttpCodes.Unauthorized) {
               let authenticationHandler;
               for (const handler2 of this.handlers) {
@@ -17613,7 +17613,7 @@ var require_lib = __commonJS({
                 }
               }
               if (authenticationHandler) {
-                return authenticationHandler.handleAuthentication(this, info3, data);
+                return authenticationHandler.handleAuthentication(this, info4, data);
               } else {
                 return response;
               }
@@ -17636,8 +17636,8 @@ var require_lib = __commonJS({
                   }
                 }
               }
-              info3 = this._prepareRequest(verb, parsedRedirectUrl, headers);
-              response = yield this.requestRaw(info3, data);
+              info4 = this._prepareRequest(verb, parsedRedirectUrl, headers);
+              response = yield this.requestRaw(info4, data);
               redirectsRemaining--;
             }
             if (!response.message.statusCode || !HttpResponseRetryCodes.includes(response.message.statusCode)) {
@@ -17666,7 +17666,7 @@ var require_lib = __commonJS({
        * @param info
        * @param data
        */
-      requestRaw(info3, data) {
+      requestRaw(info4, data) {
         return __awaiter(this, void 0, void 0, function* () {
           return new Promise((resolve, reject) => {
             function callbackForResult(err, res) {
@@ -17678,7 +17678,7 @@ var require_lib = __commonJS({
                 resolve(res);
               }
             }
-            this.requestRawWithCallback(info3, data, callbackForResult);
+            this.requestRawWithCallback(info4, data, callbackForResult);
           });
         });
       }
@@ -17688,12 +17688,12 @@ var require_lib = __commonJS({
        * @param data
        * @param onResult
        */
-      requestRawWithCallback(info3, data, onResult) {
+      requestRawWithCallback(info4, data, onResult) {
         if (typeof data === "string") {
-          if (!info3.options.headers) {
-            info3.options.headers = {};
+          if (!info4.options.headers) {
+            info4.options.headers = {};
           }
-          info3.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
+          info4.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
         }
         let callbackCalled = false;
         function handleResult(err, res) {
@@ -17702,7 +17702,7 @@ var require_lib = __commonJS({
             onResult(err, res);
           }
         }
-        const req = info3.httpModule.request(info3.options, (msg) => {
+        const req = info4.httpModule.request(info4.options, (msg) => {
           const res = new HttpClientResponse(msg);
           handleResult(void 0, res);
         });
@@ -17714,7 +17714,7 @@ var require_lib = __commonJS({
           if (socket) {
             socket.end();
           }
-          handleResult(new Error(`Request timeout: ${info3.options.path}`));
+          handleResult(new Error(`Request timeout: ${info4.options.path}`));
         });
         req.on("error", function(err) {
           handleResult(err);
@@ -17750,27 +17750,27 @@ var require_lib = __commonJS({
         return this._getProxyAgentDispatcher(parsedUrl, proxyUrl);
       }
       _prepareRequest(method, requestUrl, headers) {
-        const info3 = {};
-        info3.parsedUrl = requestUrl;
-        const usingSsl = info3.parsedUrl.protocol === "https:";
-        info3.httpModule = usingSsl ? https : http;
+        const info4 = {};
+        info4.parsedUrl = requestUrl;
+        const usingSsl = info4.parsedUrl.protocol === "https:";
+        info4.httpModule = usingSsl ? https : http;
         const defaultPort = usingSsl ? 443 : 80;
-        info3.options = {};
-        info3.options.host = info3.parsedUrl.hostname;
-        info3.options.port = info3.parsedUrl.port ? parseInt(info3.parsedUrl.port) : defaultPort;
-        info3.options.path = (info3.parsedUrl.pathname || "") + (info3.parsedUrl.search || "");
-        info3.options.method = method;
-        info3.options.headers = this._mergeHeaders(headers);
+        info4.options = {};
+        info4.options.host = info4.parsedUrl.hostname;
+        info4.options.port = info4.parsedUrl.port ? parseInt(info4.parsedUrl.port) : defaultPort;
+        info4.options.path = (info4.parsedUrl.pathname || "") + (info4.parsedUrl.search || "");
+        info4.options.method = method;
+        info4.options.headers = this._mergeHeaders(headers);
         if (this.userAgent != null) {
-          info3.options.headers["user-agent"] = this.userAgent;
+          info4.options.headers["user-agent"] = this.userAgent;
         }
-        info3.options.agent = this._getAgent(info3.parsedUrl);
+        info4.options.agent = this._getAgent(info4.parsedUrl);
         if (this.handlers) {
           for (const handler2 of this.handlers) {
-            handler2.prepareRequest(info3.options);
+            handler2.prepareRequest(info4.options);
           }
         }
-        return info3;
+        return info4;
       }
       _mergeHeaders(headers) {
         if (this.requestOptions && this.requestOptions.headers) {
@@ -19428,7 +19428,7 @@ var require_exec = __commonJS({
     exports2.getExecOutput = exports2.exec = void 0;
     var string_decoder_1 = require("string_decoder");
     var tr = __importStar(require_toolrunner());
-    function exec5(commandLine, args, options) {
+    function exec3(commandLine, args, options) {
       return __awaiter(this, void 0, void 0, function* () {
         const commandArgs = tr.argStringToArray(commandLine);
         if (commandArgs.length === 0) {
@@ -19440,7 +19440,7 @@ var require_exec = __commonJS({
         return runner.exec();
       });
     }
-    exports2.exec = exec5;
+    exports2.exec = exec3;
     function getExecOutput(commandLine, args, options) {
       var _a, _b;
       return __awaiter(this, void 0, void 0, function* () {
@@ -19463,7 +19463,7 @@ var require_exec = __commonJS({
           }
         };
         const listeners = Object.assign(Object.assign({}, options === null || options === void 0 ? void 0 : options.listeners), { stdout: stdOutListener, stderr: stdErrListener });
-        const exitCode = yield exec5(commandLine, args, Object.assign(Object.assign({}, options), { listeners }));
+        const exitCode = yield exec3(commandLine, args, Object.assign(Object.assign({}, options), { listeners }));
         stdout += stdoutDecoder.end();
         stderr += stderrDecoder.end();
         return {
@@ -19541,12 +19541,12 @@ var require_platform = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.getDetails = exports2.isLinux = exports2.isMacOS = exports2.isWindows = exports2.arch = exports2.platform = void 0;
     var os_1 = __importDefault(require("os"));
-    var exec5 = __importStar(require_exec());
+    var exec3 = __importStar(require_exec());
     var getWindowsInfo = () => __awaiter(void 0, void 0, void 0, function* () {
-      const { stdout: version } = yield exec5.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Version"', void 0, {
+      const { stdout: version } = yield exec3.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Version"', void 0, {
         silent: true
       });
-      const { stdout: name } = yield exec5.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Caption"', void 0, {
+      const { stdout: name } = yield exec3.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Caption"', void 0, {
         silent: true
       });
       return {
@@ -19556,7 +19556,7 @@ var require_platform = __commonJS({
     });
     var getMacOsInfo = () => __awaiter(void 0, void 0, void 0, function* () {
       var _a, _b, _c, _d;
-      const { stdout } = yield exec5.getExecOutput("sw_vers", void 0, {
+      const { stdout } = yield exec3.getExecOutput("sw_vers", void 0, {
         silent: true
       });
       const version = (_b = (_a = stdout.match(/ProductVersion:\s*(.+)/)) === null || _a === void 0 ? void 0 : _a[1]) !== null && _b !== void 0 ? _b : "";
@@ -19567,7 +19567,7 @@ var require_platform = __commonJS({
       };
     });
     var getLinuxInfo = () => __awaiter(void 0, void 0, void 0, function* () {
-      const { stdout } = yield exec5.getExecOutput("lsb_release", ["-i", "-r", "-s"], {
+      const { stdout } = yield exec3.getExecOutput("lsb_release", ["-i", "-r", "-s"], {
         silent: true
       });
       const [name, version] = stdout.trim().split("\n");
@@ -19760,10 +19760,10 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       (0, command_1.issueCommand)("notice", (0, utils_1.toCommandProperties)(properties), message instanceof Error ? message.toString() : message);
     }
     exports2.notice = notice;
-    function info3(message) {
+    function info4(message) {
       process.stdout.write(message + os.EOL);
     }
-    exports2.info = info3;
+    exports2.info = info4;
     function startGroup(name) {
       (0, command_1.issue)("group", name);
     }
@@ -19875,16 +19875,16 @@ var require_dist = __commonJS({
       runPostCleanup: () => runPostCleanup2
     });
     module2.exports = __toCommonJS2(index_exports);
-    var core3 = __toESM2(require_core());
+    var core4 = __toESM2(require_core());
     function getOrCreateRunId2() {
       const existing = process.env.FERN_RUN_ID;
       if (existing) {
-        core3.debug(`Inheriting FERN_RUN_ID from environment: ${existing}`);
+        core4.debug(`Inheriting FERN_RUN_ID from environment: ${existing}`);
         return existing;
       }
       const runId = crypto.randomUUID();
-      core3.exportVariable("FERN_RUN_ID", runId);
-      core3.debug(`Generated new FERN_RUN_ID: ${runId}`);
+      core4.exportVariable("FERN_RUN_ID", runId);
+      core4.debug(`Generated new FERN_RUN_ID: ${runId}`);
       return runId;
     }
     function getGithubRunId() {
@@ -19968,7 +19968,7 @@ var require_dist = __commonJS({
     function isPostPhase2() {
       return core32.getState(STATE_IS_POST) === "true";
     }
-    var core4 = __toESM2(require_core());
+    var core42 = __toESM2(require_core());
     var io = __toESM2(require_io());
     async function resolveFernCli2(version) {
       let resolved;
@@ -19979,17 +19979,17 @@ var require_dist = __commonJS({
         if (!fernPath) {
           throw new Error("version is 'inherit' but fern is not on PATH.");
         }
-        core4.exportVariable("FERN_NO_VERSION_REDIRECTION", "true");
+        core42.exportVariable("FERN_NO_VERSION_REDIRECTION", "true");
         resolved = { command: "fern", leadingArgs: [] };
       } else {
-        core4.exportVariable("FERN_NO_VERSION_REDIRECTION", "true");
+        core42.exportVariable("FERN_NO_VERSION_REDIRECTION", "true");
         resolved = { command: "npx", leadingArgs: ["--yes", `fern-api@${version}`] };
       }
-      core4.info(`Using Fern CLI: ${[resolved.command, ...resolved.leadingArgs].join(" ")}`);
+      core42.info(`Using Fern CLI: ${[resolved.command, ...resolved.leadingArgs].join(" ")}`);
       return resolved;
     }
     var core5 = __toESM2(require_core());
-    var exec5 = __toESM2(require_exec());
+    var exec3 = __toESM2(require_exec());
     var io2 = __toESM2(require_io());
     async function installFernCli(version) {
       const npm = await io2.which("npm", false);
@@ -20001,9 +20001,9 @@ var require_dist = __commonJS({
         throw new Error("node is not available. Please add a Node.js setup step before this action.");
       }
       const pkg = version === "latest" || version === "auto" ? "fern-api" : `fern-api@${version}`;
-      await exec5.exec("npm", ["install", "-g", pkg]);
+      await exec3.exec("npm", ["install", "-g", pkg]);
       let stdout = "";
-      await exec5.exec("fern", ["--version"], {
+      await exec3.exec("fern", ["--version"], {
         env: { ...process.env, FERN_NO_VERSION_REDIRECTION: "true" },
         listeners: {
           stdout: (data) => {
@@ -24168,7 +24168,7 @@ var require_github = __commonJS({
 });
 
 // src/index.ts
-var core2 = __toESM(require_core());
+var core3 = __toESM(require_core());
 var import_shared = __toESM(require_dist());
 
 // src/manage-pr.ts
@@ -24189,12 +24189,6 @@ async function pushAndManagePr({
   core.info(`Default branch: ${defaultBranch}`);
   await exec.exec("git", ["config", "user.name", "github-actions[bot]"]);
   await exec.exec("git", ["config", "user.email", "github-actions[bot]@users.noreply.github.com"]);
-  try {
-    await octokit.rest.repos.getBranch({ owner, repo, branch: UPGRADE_BRANCH });
-    core.info(`Branch ${UPGRADE_BRANCH} already exists \u2014 will reset to ${defaultBranch} HEAD.`);
-  } catch {
-    core.info(`Branch ${UPGRADE_BRANCH} does not exist \u2014 will create.`);
-  }
   await exec.exec("git", ["checkout", "-B", UPGRADE_BRANCH, `origin/${defaultBranch}`]);
   await exec.exec("git", ["add", "fern/"]);
   const diffResult = await exec.exec("git", ["diff", "--cached", "--quiet"], {
@@ -24241,7 +24235,8 @@ async function pushAndManagePr({
 }
 
 // src/run-upgrade.ts
-var exec3 = __toESM(require_exec());
+var import_node_child_process = require("child_process");
+var core2 = __toESM(require_core());
 var UPGRADE_TIMEOUT_MS = 10 * 60 * 1e3;
 async function runAutomationsUpgrade({
   cli,
@@ -24254,22 +24249,39 @@ async function runAutomationsUpgrade({
   }
   let stdout = "";
   let stderr = "";
-  const exitCode = await withTimeout(
-    exec3.exec(cli.command, args, {
+  const exitCode = await new Promise((resolve, reject) => {
+    const child = (0, import_node_child_process.spawn)(cli.command, args, {
       env: { ...process.env, FERN_TOKEN: fernToken },
-      listeners: {
-        stdout: (data) => {
-          stdout += data.toString();
-        },
-        stderr: (data) => {
-          stderr += data.toString();
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+    child.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
+    child.stderr.on("data", (data) => {
+      const chunk = data.toString();
+      stderr += chunk;
+      core2.info(chunk.trimEnd());
+    });
+    const timer = setTimeout(() => {
+      child.kill("SIGTERM");
+      setTimeout(() => {
+        if (!child.killed) {
+          child.kill("SIGKILL");
         }
-      },
-      ignoreReturnCode: true
-    }),
-    UPGRADE_TIMEOUT_MS,
-    `fern automations upgrade timed out after ${UPGRADE_TIMEOUT_MS / 6e4} minutes`
-  );
+      }, 5e3);
+      reject(
+        new Error(`fern automations upgrade timed out after ${UPGRADE_TIMEOUT_MS / 6e4} minutes`)
+      );
+    }, UPGRADE_TIMEOUT_MS);
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      resolve(code ?? 1);
+    });
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+  });
   if (exitCode !== 0) {
     throw new Error(
       `fern automations upgrade failed with exit code ${exitCode}.
@@ -24289,28 +24301,21 @@ stderr: ${stderr.slice(0, 2e3)}`
   }
   return parsed;
 }
-function withTimeout(promise, ms, message) {
-  let timer;
-  const timeout = new Promise((_resolve, reject) => {
-    timer = setTimeout(() => reject(new Error(message)), ms);
-  });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
-}
 
 // src/index.ts
 function parseInputs() {
   return {
     fernToken: (0, import_shared.getRequiredFernToken)(),
-    version: core2.getInput("version") || "latest",
-    includeMajor: core2.getBooleanInput("include-major"),
-    githubToken: core2.getInput("github-token") || process.env.GITHUB_TOKEN || ""
+    version: core3.getInput("version") || "latest",
+    includeMajor: core3.getBooleanInput("include-major"),
+    githubToken: core3.getInput("github-token") || process.env.GITHUB_TOKEN || ""
   };
 }
 async function run(inputs) {
   const runId = (0, import_shared.getOrCreateRunId)();
-  core2.setOutput("run-id", runId);
+  core3.setOutput("run-id", runId);
   if (inputs.githubToken) {
-    core2.setSecret(inputs.githubToken);
+    core3.setSecret(inputs.githubToken);
   }
   const cli = await (0, import_shared.resolveFernCli)(inputs.version);
   const json = await runAutomationsUpgrade({
@@ -24319,14 +24324,14 @@ async function run(inputs) {
     includeMajor: inputs.includeMajor
   });
   if (json.pr == null) {
-    core2.info("No upgrades available. Everything is up to date.");
-    core2.setOutput("pr-url", "");
-    core2.setOutput("cli-upgraded", "false");
-    core2.setOutput("generators-upgraded", JSON.stringify([]));
+    core3.info("No upgrades available. Everything is up to date.");
+    core3.setOutput("pr-url", "");
+    core3.setOutput("cli-upgraded", "false");
+    core3.setOutput("generators-upgraded", JSON.stringify([]));
     return;
   }
-  core2.setOutput("cli-upgraded", String(json.cli.upgraded));
-  core2.setOutput(
+  core3.setOutput("cli-upgraded", String(json.cli.upgraded));
+  core3.setOutput(
     "generators-upgraded",
     JSON.stringify(json.generators.map((g) => ({ generator: g.name, from: g.from, to: g.to })))
   );
@@ -24336,7 +24341,7 @@ async function run(inputs) {
     prBody: json.pr.body,
     githubToken: inputs.githubToken
   });
-  core2.setOutput("pr-url", prUrl);
+  core3.setOutput("pr-url", prUrl);
 }
 (0, import_shared.runAction)(async () => {
   if ((0, import_shared.isPostPhase)()) {

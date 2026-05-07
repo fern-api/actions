@@ -34,18 +34,12 @@ export async function pushAndManagePr({
   await exec.exec("git", ["config", "user.name", "github-actions[bot]"]);
   await exec.exec("git", ["config", "user.email", "github-actions[bot]@users.noreply.github.com"]);
 
-  // Check if fern/upgrade branch already exists remotely
-  try {
-    await octokit.rest.repos.getBranch({ owner, repo, branch: UPGRADE_BRANCH });
-    core.info(`Branch ${UPGRADE_BRANCH} already exists — will reset to ${defaultBranch} HEAD.`);
-  } catch {
-    core.info(`Branch ${UPGRADE_BRANCH} does not exist — will create.`);
-  }
-
-  // Reset to clean slate from default branch
+  // Reset to clean slate from default branch (creates or overwrites fern/upgrade)
   await exec.exec("git", ["checkout", "-B", UPGRADE_BRANCH, `origin/${defaultBranch}`]);
 
-  // Stage only fern/ directory changes
+  // Stage only fern/ directory changes.
+  // The CLI modifies files under fern/ (fern.config.json, generators.yml),
+  // which is the standard Fern project layout.
   await exec.exec("git", ["add", "fern/"]);
 
   // Check if there are actually changes to commit
@@ -59,7 +53,10 @@ export async function pushAndManagePr({
 
   await exec.exec("git", ["commit", "-m", commitMsg]);
 
-  // Force-push the clean-slate branch
+  // Force-push the clean-slate branch.
+  // Note: --force-with-lease is effectively --force here since the local
+  // branch was just created from origin/<default> with no prior tracking.
+  // This is intentional: the clean-slate model resets the branch each run.
   await exec.exec("git", ["push", "--force-with-lease", "origin", `HEAD:${UPGRADE_BRANCH}`]);
 
   // Create or update the PR
