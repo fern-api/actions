@@ -24171,75 +24171,6 @@ var require_github = __commonJS({
 var core2 = __toESM(require_core());
 var import_shared = __toESM(require_dist());
 
-// src/diff.ts
-function cliJsonToDiff(json) {
-  return {
-    cliFrom: json.cli.from,
-    cliTo: json.cli.to,
-    cliUpgraded: json.cli.upgraded,
-    generators: json.generators
-  };
-}
-function getShortGeneratorName(name) {
-  return name.replace(/^fernapi\/fern-/, "");
-}
-function getChangelogUrl(name) {
-  const match = name.match(/^fernapi\/fern-([a-z]+)/);
-  if (!match?.[1]) {
-    return void 0;
-  }
-  return `https://buildwithfern.com/learn/sdks/generators/${match[1]}/changelog`;
-}
-function buildPrTitle(diff) {
-  const parts = [];
-  if (diff.cliUpgraded) {
-    parts.push(`CLI ${diff.cliFrom} \u2192 ${diff.cliTo}`);
-  }
-  if (diff.generators.length > 0) {
-    parts.push(`${diff.generators.length} generator${diff.generators.length === 1 ? "" : "s"}`);
-  }
-  if (parts.length === 0) {
-    return "chore(fern): upgrade check (no changes)";
-  }
-  return `chore(fern): upgrade ${parts.join(" and ")}`;
-}
-function buildPrBody(diff) {
-  const sections = ["## Fern Upgrade\n"];
-  if (diff.cliUpgraded) {
-    sections.push(`### CLI
-- \`${diff.cliFrom}\` \u2192 \`${diff.cliTo}\`
-`);
-  }
-  if (diff.generators.length > 0) {
-    sections.push("### Generators");
-    sections.push("| Generator | From | To | Changelog |");
-    sections.push("|-----------|------|----|-----------|");
-    for (const g of diff.generators) {
-      const changelogUrl = g.changelog ?? getChangelogUrl(g.name);
-      const link = changelogUrl ? `[View](${changelogUrl})` : "\u2014";
-      sections.push(`| ${g.name} | ${g.from} | ${g.to} | ${link} |`);
-    }
-    sections.push("");
-  }
-  sections.push(
-    "---\n\u{1F916}This PR was automatically created by [fern-upgrade](https://github.com/fern-api/actions/tree/main/upgrade)"
-  );
-  return sections.join("\n");
-}
-function buildCommitMessage(diff) {
-  const parts = [];
-  if (diff.cliUpgraded) {
-    parts.push(`cli ${diff.cliFrom} \u2192 ${diff.cliTo}`);
-  }
-  for (const g of diff.generators) {
-    parts.push(`${getShortGeneratorName(g.name)} ${g.from} \u2192 ${g.to}`);
-  }
-  if (parts.length === 0) {
-    return "chore: fern upgrade check (no changes)";
-  }
-  return `chore: upgrade fern ${parts.join(", ")}`;
-}
-
 // src/manage-pr.ts
 var core = __toESM(require_core());
 var exec = __toESM(require_exec());
@@ -24341,46 +24272,22 @@ async function runAutomationsUpgrade({
   );
   if (exitCode !== 0) {
     throw new Error(
-      `fern automations upgrade failed with exit code ${exitCode}. Check the Actions run log for details.`
+      `fern automations upgrade failed with exit code ${exitCode}.
+stderr: ${stderr.slice(0, 2e3)}`
     );
   }
-  const parsed = extractUpgradeJson(stdout) ?? extractUpgradeJson(stderr);
-  if (!parsed) {
+  if (!stdout.trim()) {
     throw new Error(
-      "fern automations upgrade produced no parseable JSON output. Ensure the CLI version supports 'fern automations upgrade --json'."
+      "fern automations upgrade produced no JSON output on stdout. Ensure the CLI version supports 'fern automations upgrade --json'."
+    );
+  }
+  const parsed = JSON.parse(stdout.trim());
+  if (!parsed.cli || !Array.isArray(parsed.generators)) {
+    throw new Error(
+      `fern automations upgrade returned unexpected JSON schema. Expected { cli, generators, ... } \u2014 got: ${stdout.trim().slice(0, 200)}`
     );
   }
   return parsed;
-}
-function extractUpgradeJson(output) {
-  if (!output.trim()) {
-    return void 0;
-  }
-  try {
-    const obj = JSON.parse(output.trim());
-    if (obj.cli && Array.isArray(obj.generators)) {
-      return obj;
-    }
-  } catch {
-  }
-  const lines = output.split("\n");
-  for (let i = lines.length - 1; i >= 0; i--) {
-    if (lines[i].trimStart().startsWith("{")) {
-      for (let j = lines.length - 1; j >= i; j--) {
-        if (lines[j].trimEnd().endsWith("}")) {
-          try {
-            const candidate = lines.slice(i, j + 1).join("\n");
-            const obj = JSON.parse(candidate);
-            if (obj.cli && Array.isArray(obj.generators)) {
-              return obj;
-            }
-          } catch {
-          }
-        }
-      }
-    }
-  }
-  return void 0;
 }
 function withTimeout(promise, ms, message) {
   let timer;
@@ -24411,26 +24318,22 @@ async function run(inputs) {
     fernToken: inputs.fernToken,
     includeMajor: inputs.includeMajor
   });
-  const diff = cliJsonToDiff(json);
-  if (diff.generators.length === 0 && !diff.cliUpgraded) {
+  if (json.pr == null) {
     core2.info("No upgrades available. Everything is up to date.");
     core2.setOutput("pr-url", "");
     core2.setOutput("cli-upgraded", "false");
     core2.setOutput("generators-upgraded", JSON.stringify([]));
     return;
   }
-  const prTitle = buildPrTitle(diff);
-  const prBody = buildPrBody(diff);
-  const commitMsg = buildCommitMessage(diff);
-  core2.setOutput("cli-upgraded", String(diff.cliUpgraded));
+  core2.setOutput("cli-upgraded", String(json.cli.upgraded));
   core2.setOutput(
     "generators-upgraded",
-    JSON.stringify(diff.generators.map((g) => ({ generator: g.name, from: g.from, to: g.to })))
+    JSON.stringify(json.generators.map((g) => ({ generator: g.name, from: g.from, to: g.to })))
   );
   const prUrl = await pushAndManagePr({
-    commitMsg,
-    prTitle,
-    prBody,
+    commitMsg: json.pr.commitMessage,
+    prTitle: json.pr.title,
+    prBody: json.pr.body,
     githubToken: inputs.githubToken
   });
   core2.setOutput("pr-url", prUrl);

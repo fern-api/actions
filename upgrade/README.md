@@ -57,8 +57,8 @@ jobs:
 2. Runs `fern automations upgrade --json [--no-include-major]` which:
    - Upgrades the CLI version in `fern.config.json`
    - Upgrades all generator versions in `generators.yml`
-   - Outputs structured JSON with before/after versions
-3. Builds a PR title, body (with changelog table), and commit message from the JSON.
+   - Outputs structured JSON with before/after versions, changelog links, and a suggested PR title/body/commit message
+3. Uses the CLI-provided `pr.title`, `pr.body`, and `pr.commitMessage` directly.
 4. Pushes changes to the `fern/upgrade` branch and creates or updates a PR.
 
 ## CLI flag mapping

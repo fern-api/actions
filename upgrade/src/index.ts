@@ -9,7 +9,6 @@ import {
   runAction,
   runPostCleanup,
 } from "@fern-github-actions/shared";
-import { buildCommitMessage, buildPrBody, buildPrTitle, cliJsonToDiff } from "./diff.js";
 import { pushAndManagePr } from "./manage-pr.js";
 import { runAutomationsUpgrade } from "./run-upgrade.js";
 
@@ -44,9 +43,7 @@ async function run(inputs: ActionInputs): Promise<void> {
     includeMajor: inputs.includeMajor,
   });
 
-  const diff = cliJsonToDiff(json);
-
-  if (diff.generators.length === 0 && !diff.cliUpgraded) {
+  if (json.pr == null) {
     core.info("No upgrades available. Everything is up to date.");
     core.setOutput("pr-url", "");
     core.setOutput("cli-upgraded", "false");
@@ -54,20 +51,16 @@ async function run(inputs: ActionInputs): Promise<void> {
     return;
   }
 
-  const prTitle = buildPrTitle(diff);
-  const prBody = buildPrBody(diff);
-  const commitMsg = buildCommitMessage(diff);
-
-  core.setOutput("cli-upgraded", String(diff.cliUpgraded));
+  core.setOutput("cli-upgraded", String(json.cli.upgraded));
   core.setOutput(
     "generators-upgraded",
-    JSON.stringify(diff.generators.map((g) => ({ generator: g.name, from: g.from, to: g.to })))
+    JSON.stringify(json.generators.map((g) => ({ generator: g.name, from: g.from, to: g.to })))
   );
 
   const prUrl = await pushAndManagePr({
-    commitMsg,
-    prTitle,
-    prBody,
+    commitMsg: json.pr.commitMessage,
+    prTitle: json.pr.title,
+    prBody: json.pr.body,
     githubToken: inputs.githubToken,
   });
 

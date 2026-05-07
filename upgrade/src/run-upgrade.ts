@@ -11,15 +11,10 @@ export interface GeneratorUpgradeEntry {
   migrationsApplied: number;
 }
 
-export interface SkippedMajorEntry {
-  name: string;
-  current: string;
-  latest: string;
-}
-
-export interface AlreadyUpToDateEntry {
-  name: string;
-  version: string;
+export interface PrSuggestion {
+  title: string;
+  body: string;
+  commitMessage: string;
 }
 
 export interface AutomationsUpgradeJson {
@@ -29,8 +24,9 @@ export interface AutomationsUpgradeJson {
     upgraded: boolean;
   };
   generators: GeneratorUpgradeEntry[];
-  skippedMajor: SkippedMajorEntry[];
-  alreadyUpToDate: AlreadyUpToDateEntry[];
+  skippedMajor: { name: string; current: string; latest: string }[];
+  alreadyUpToDate: { name: string; version: string }[];
+  pr: PrSuggestion | null;
 }
 
 const UPGRADE_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
@@ -74,63 +70,25 @@ export async function runAutomationsUpgrade({
 
   if (exitCode !== 0) {
     throw new Error(
-      `fern automations upgrade failed with exit code ${exitCode}. Check the Actions run log for details.`
+      `fern automations upgrade failed with exit code ${exitCode}.\nstderr: ${stderr.slice(0, 2000)}`
     );
   }
 
-  // Parse JSON from CLI output. Try stdout first, then fall back to stderr
-  // (version redirection may route output to stderr).
-  const parsed = extractUpgradeJson(stdout) ?? extractUpgradeJson(stderr);
-  if (!parsed) {
+  if (!stdout.trim()) {
     throw new Error(
-      "fern automations upgrade produced no parseable JSON output. " +
+      "fern automations upgrade produced no JSON output on stdout. " +
         "Ensure the CLI version supports 'fern automations upgrade --json'."
     );
   }
 
+  const parsed = JSON.parse(stdout.trim()) as AutomationsUpgradeJson;
+  if (!parsed.cli || !Array.isArray(parsed.generators)) {
+    throw new Error(
+      `fern automations upgrade returned unexpected JSON schema. Expected { cli, generators, ... } — got: ${stdout.trim().slice(0, 200)}`
+    );
+  }
+
   return parsed;
-}
-
-/**
- * Extracts the upgrade JSON from CLI output that may contain non-JSON log lines.
- */
-export function extractUpgradeJson(output: string): AutomationsUpgradeJson | undefined {
-  if (!output.trim()) {
-    return undefined;
-  }
-
-  // Happy path: output is clean JSON
-  try {
-    const obj = JSON.parse(output.trim()) as AutomationsUpgradeJson;
-    if (obj.cli && Array.isArray(obj.generators)) {
-      return obj;
-    }
-  } catch {
-    // Expected when log lines are mixed in
-  }
-
-  // Fallback: find lines that look like the start of a JSON object and try
-  // to parse from there to the end.
-  const lines = output.split("\n");
-  for (let i = lines.length - 1; i >= 0; i--) {
-    if (lines[i].trimStart().startsWith("{")) {
-      for (let j = lines.length - 1; j >= i; j--) {
-        if (lines[j].trimEnd().endsWith("}")) {
-          try {
-            const candidate = lines.slice(i, j + 1).join("\n");
-            const obj = JSON.parse(candidate) as AutomationsUpgradeJson;
-            if (obj.cli && Array.isArray(obj.generators)) {
-              return obj;
-            }
-          } catch {
-            // Not valid JSON for this range — keep scanning
-          }
-        }
-      }
-    }
-  }
-
-  return undefined;
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
