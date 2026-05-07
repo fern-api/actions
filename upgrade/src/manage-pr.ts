@@ -34,6 +34,9 @@ export async function pushAndManagePr({
   await exec.exec("git", ["config", "user.name", "github-actions[bot]"]);
   await exec.exec("git", ["config", "user.email", "github-actions[bot]@users.noreply.github.com"]);
 
+  // Fetch the default branch ref (shallow checkouts from pull_request events don't include it)
+  await exec.exec("git", ["fetch", "origin", defaultBranch]);
+
   // Reset to clean slate from default branch (creates or overwrites fern/upgrade)
   await exec.exec("git", ["checkout", "-B", UPGRADE_BRANCH, `origin/${defaultBranch}`]);
 

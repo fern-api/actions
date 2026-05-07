@@ -24189,6 +24189,7 @@ async function pushAndManagePr({
   core.info(`Default branch: ${defaultBranch}`);
   await exec.exec("git", ["config", "user.name", "github-actions[bot]"]);
   await exec.exec("git", ["config", "user.email", "github-actions[bot]@users.noreply.github.com"]);
+  await exec.exec("git", ["fetch", "origin", defaultBranch]);
   await exec.exec("git", ["checkout", "-B", UPGRADE_BRANCH, `origin/${defaultBranch}`]);
   await exec.exec("git", ["add", "fern/"]);
   const diffResult = await exec.exec("git", ["diff", "--cached", "--quiet"], {
