@@ -24299,6 +24299,11 @@ stderr: ${stderr.slice(0, 2e3)}`
       `fern automations upgrade returned unexpected JSON schema. Expected { cli, generators, ... } \u2014 got: ${stdout.trim().slice(0, 200)}`
     );
   }
+  if (parsed.schemaVersion !== 1) {
+    throw new Error(
+      `Unsupported schema version ${parsed.schemaVersion}. Update the upgrade action.`
+    );
+  }
   return parsed;
 }
 
