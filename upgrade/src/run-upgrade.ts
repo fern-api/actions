@@ -19,7 +19,6 @@ export interface PrSuggestion {
 }
 
 export interface AutomationsUpgradeJson {
-  schemaVersion: number;
   cli: {
     from: string;
     to: string;
@@ -112,11 +111,5 @@ export async function runAutomationsUpgrade({
       `fern automations upgrade returned unexpected JSON schema. Expected { cli, generators, ... } — got: ${stdout.trim().slice(0, 200)}`
     );
   }
-  if (parsed.schemaVersion !== 1) {
-    throw new Error(
-      `Unsupported schema version ${parsed.schemaVersion}. Update the upgrade action.`
-    );
-  }
-
   return parsed;
 }

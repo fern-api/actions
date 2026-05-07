@@ -4,7 +4,6 @@ import type { AutomationsUpgradeJson } from "../src/run-upgrade.js";
 describe("AutomationsUpgradeJson schema", () => {
   it("accepts a complete upgrade result with pr suggestion", () => {
     const json: AutomationsUpgradeJson = {
-      schemaVersion: 1,
       cli: { from: "4.66.0", to: "5.7.3", upgraded: true },
       generators: [
         {
@@ -34,7 +33,6 @@ describe("AutomationsUpgradeJson schema", () => {
 
   it("accepts null pr when nothing changed", () => {
     const json: AutomationsUpgradeJson = {
-      schemaVersion: 1,
       cli: { from: "5.7.3", to: "5.7.3", upgraded: false },
       generators: [],
       skippedMajor: [],
@@ -49,7 +47,6 @@ describe("AutomationsUpgradeJson schema", () => {
 
   it("validates generators have expected fields", () => {
     const json: AutomationsUpgradeJson = {
-      schemaVersion: 1,
       cli: { from: "5.0.0", to: "5.7.3", upgraded: true },
       generators: [
         {
