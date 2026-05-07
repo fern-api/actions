@@ -24207,7 +24207,7 @@ async function pushAndManagePr({
     return "";
   }
   await exec.exec("git", ["commit", "-m", commitMsg]);
-  await exec.exec("git", ["push", "--force-with-lease", "origin", `HEAD:${UPGRADE_BRANCH}`]);
+  await exec.exec("git", ["push", "--force", "origin", `HEAD:${UPGRADE_BRANCH}`]);
   const existingPrs = await octokit.rest.pulls.list({
     owner,
     repo,

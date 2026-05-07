@@ -70,10 +70,11 @@ export async function pushAndManagePr({
   await exec.exec("git", ["commit", "-m", commitMsg]);
 
   // Force-push the clean-slate branch.
-  // Note: --force-with-lease is effectively --force here since the local
-  // branch was just created from origin/<default> with no prior tracking.
+  // We use --force (not --force-with-lease) because the local branch was just created
+  // fresh from origin/<default> with no prior tracking ref. --force-with-lease would
+  // reject the push when a remote fern/upgrade already exists from a previous run.
   // This is intentional: the clean-slate model resets the branch each run.
-  await exec.exec("git", ["push", "--force-with-lease", "origin", `HEAD:${UPGRADE_BRANCH}`]);
+  await exec.exec("git", ["push", "--force", "origin", `HEAD:${UPGRADE_BRANCH}`]);
 
   // Create or update the PR
   const existingPrs = await octokit.rest.pulls.list({
