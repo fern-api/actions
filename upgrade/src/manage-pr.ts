@@ -37,8 +37,14 @@ export async function pushAndManagePr({
   // Fetch the default branch ref (shallow checkouts from pull_request events don't include it)
   await exec.exec("git", ["fetch", "origin", defaultBranch]);
 
+  // Stash the CLI's modifications (fern.config.json, generators.yml) so we can switch branches
+  await exec.exec("git", ["stash", "--include-untracked"]);
+
   // Reset to clean slate from default branch (creates or overwrites fern/upgrade)
   await exec.exec("git", ["checkout", "-B", UPGRADE_BRANCH, `origin/${defaultBranch}`]);
+
+  // Restore the CLI's modifications on top of the clean-slate branch
+  await exec.exec("git", ["stash", "pop"]);
 
   // Stage only fern/ directory changes.
   // The CLI modifies files under fern/ (fern.config.json, generators.yml),
