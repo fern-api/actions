@@ -39,19 +39,36 @@ export async function pushAndManagePr({
   // Fetch the default branch ref (shallow checkouts from pull_request events don't include it)
   await exec.exec("git", ["fetch", "origin", defaultBranch]);
 
+  // Guard: fern/ must exist (all CLI modifications land under this directory)
+  if (!fs.existsSync("fern")) {
+    throw new Error(
+      "Expected fern/ directory in workspace root but it does not exist. " +
+        "Verify the repository has a standard Fern project layout."
+    );
+  }
+
   // Save the CLI-modified fern/ directory to a temp location before switching branches.
   // We can't use git stash because files may exist on the checked-out branch but not on
   // origin/main, causing merge conflicts on stash pop.
   const tmpDir = fs.mkdtempSync(path.join(process.env.RUNNER_TEMP || "/tmp", "fern-upgrade-"));
-  await exec.exec("cp", ["-a", "fern", tmpDir]);
+  try {
+    await exec.exec("cp", ["-a", "fern", tmpDir]);
 
-  // Reset to clean slate from default branch (creates or overwrites fern/upgrade)
-  await exec.exec("git", ["checkout", "-B", UPGRADE_BRANCH, `origin/${defaultBranch}`, "--force"]);
+    // Reset to clean slate from default branch (creates or overwrites fern/upgrade)
+    await exec.exec("git", [
+      "checkout",
+      "-B",
+      UPGRADE_BRANCH,
+      `origin/${defaultBranch}`,
+      "--force",
+    ]);
 
-  // Restore the CLI-modified fern/ directory
-  await exec.exec("rm", ["-rf", "fern"]);
-  await exec.exec("cp", ["-a", path.join(tmpDir, "fern"), "."]);
-  fs.rmSync(tmpDir, { recursive: true, force: true });
+    // Restore the CLI-modified fern/ directory
+    await exec.exec("rm", ["-rf", "fern"]);
+    await exec.exec("cp", ["-a", path.join(tmpDir, "fern"), "."]);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 
   // Stage only fern/ directory changes.
   // The CLI modifies files under fern/ (fern.config.json, generators.yml),

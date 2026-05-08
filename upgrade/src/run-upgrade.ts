@@ -54,6 +54,9 @@ export async function runAutomationsUpgrade({
   let stderr = "";
 
   const exitCode = await new Promise<number>((resolve, reject) => {
+    let settled = false;
+    let exited = false;
+
     const child = spawn(cli.command, args, {
       env: { ...process.env, FERN_TOKEN: fernToken },
       stdio: ["ignore", "pipe", "pipe"],
@@ -68,28 +71,45 @@ export async function runAutomationsUpgrade({
       core.info(chunk.trimEnd());
     });
 
-    const timer = setTimeout(() => {
-      child.kill("SIGTERM");
-      // Give the process a few seconds to clean up, then force-kill
-      setTimeout(() => {
-        if (!child.killed) {
-          child.kill("SIGKILL");
-        }
-      }, 5000);
-      reject(
-        new Error(`fern automations upgrade timed out after ${UPGRADE_TIMEOUT_MS / 60000} minutes`)
-      );
-    }, UPGRADE_TIMEOUT_MS);
-
     child.on("close", (code) => {
+      exited = true;
       clearTimeout(timer);
-      resolve(code ?? 1);
+      if (!settled) {
+        settled = true;
+        resolve(code ?? 1);
+      }
     });
 
     child.on("error", (err) => {
       clearTimeout(timer);
-      reject(err);
+      if (!settled) {
+        settled = true;
+        reject(err);
+      }
     });
+
+    const timer = setTimeout(() => {
+      child.kill("SIGTERM");
+      // Give the process 5 seconds to exit gracefully, then force-kill
+      setTimeout(() => {
+        if (!exited) {
+          child.kill("SIGKILL");
+        }
+      }, 5000);
+      // Wait for the process to actually die before rejecting, so the caller
+      // doesn't race with a still-alive child writing to the working directory.
+      const waitForExit = setInterval(() => {
+        if (exited && !settled) {
+          clearInterval(waitForExit);
+          settled = true;
+          reject(
+            new Error(
+              `fern automations upgrade timed out after ${UPGRADE_TIMEOUT_MS / 60000} minutes`
+            )
+          );
+        }
+      }, 100);
+    }, UPGRADE_TIMEOUT_MS);
   });
 
   if (exitCode !== 0) {
@@ -98,18 +118,35 @@ export async function runAutomationsUpgrade({
     );
   }
 
-  if (!stdout.trim()) {
+  return parseUpgradeOutput(stdout);
+}
+
+/**
+ * Parses and validates the raw stdout from `fern automations upgrade --json`.
+ * Exported separately so it can be unit-tested without spawning a child process.
+ */
+export function parseUpgradeOutput(stdout: string): AutomationsUpgradeJson {
+  const trimmed = stdout.trim();
+
+  if (!trimmed) {
     throw new Error(
       "fern automations upgrade produced no JSON output on stdout. " +
         "Ensure the CLI version supports 'fern automations upgrade --json'."
     );
   }
 
-  const parsed = JSON.parse(stdout.trim()) as AutomationsUpgradeJson;
-  if (!parsed.cli || !Array.isArray(parsed.generators)) {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    throw new Error(`fern automations upgrade returned invalid JSON: ${trimmed.slice(0, 200)}`);
+  }
+
+  const result = parsed as AutomationsUpgradeJson;
+  if (!result.cli || !Array.isArray(result.generators)) {
     throw new Error(
-      `fern automations upgrade returned unexpected JSON schema. Expected { cli, generators, ... } — got: ${stdout.trim().slice(0, 200)}`
+      `fern automations upgrade returned unexpected JSON schema. Expected { cli, generators, ... } — got: ${trimmed.slice(0, 200)}`
     );
   }
-  return parsed;
+  return result;
 }

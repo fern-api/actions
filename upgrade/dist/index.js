@@ -24192,12 +24192,26 @@ async function pushAndManagePr({
   await exec.exec("git", ["config", "user.name", "github-actions[bot]"]);
   await exec.exec("git", ["config", "user.email", "github-actions[bot]@users.noreply.github.com"]);
   await exec.exec("git", ["fetch", "origin", defaultBranch]);
+  if (!fs.existsSync("fern")) {
+    throw new Error(
+      "Expected fern/ directory in workspace root but it does not exist. Verify the repository has a standard Fern project layout."
+    );
+  }
   const tmpDir = fs.mkdtempSync(path.join(process.env.RUNNER_TEMP || "/tmp", "fern-upgrade-"));
-  await exec.exec("cp", ["-a", "fern", tmpDir]);
-  await exec.exec("git", ["checkout", "-B", UPGRADE_BRANCH, `origin/${defaultBranch}`, "--force"]);
-  await exec.exec("rm", ["-rf", "fern"]);
-  await exec.exec("cp", ["-a", path.join(tmpDir, "fern"), "."]);
-  fs.rmSync(tmpDir, { recursive: true, force: true });
+  try {
+    await exec.exec("cp", ["-a", "fern", tmpDir]);
+    await exec.exec("git", [
+      "checkout",
+      "-B",
+      UPGRADE_BRANCH,
+      `origin/${defaultBranch}`,
+      "--force"
+    ]);
+    await exec.exec("rm", ["-rf", "fern"]);
+    await exec.exec("cp", ["-a", path.join(tmpDir, "fern"), "."]);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
   await exec.exec("git", ["add", "fern/"]);
   const diffResult = await exec.exec("git", ["diff", "--cached", "--quiet"], {
     ignoreReturnCode: true
@@ -24258,6 +24272,8 @@ async function runAutomationsUpgrade({
   let stdout = "";
   let stderr = "";
   const exitCode = await new Promise((resolve, reject) => {
+    let settled = false;
+    let exited = false;
     const child = (0, import_node_child_process.spawn)(cli.command, args, {
       env: { ...process.env, FERN_TOKEN: fernToken },
       stdio: ["ignore", "pipe", "pipe"]
@@ -24270,25 +24286,40 @@ async function runAutomationsUpgrade({
       stderr += chunk;
       core2.info(chunk.trimEnd());
     });
-    const timer = setTimeout(() => {
-      child.kill("SIGTERM");
-      setTimeout(() => {
-        if (!child.killed) {
-          child.kill("SIGKILL");
-        }
-      }, 5e3);
-      reject(
-        new Error(`fern automations upgrade timed out after ${UPGRADE_TIMEOUT_MS / 6e4} minutes`)
-      );
-    }, UPGRADE_TIMEOUT_MS);
     child.on("close", (code) => {
+      exited = true;
       clearTimeout(timer);
-      resolve(code ?? 1);
+      if (!settled) {
+        settled = true;
+        resolve(code ?? 1);
+      }
     });
     child.on("error", (err) => {
       clearTimeout(timer);
-      reject(err);
+      if (!settled) {
+        settled = true;
+        reject(err);
+      }
     });
+    const timer = setTimeout(() => {
+      child.kill("SIGTERM");
+      setTimeout(() => {
+        if (!exited) {
+          child.kill("SIGKILL");
+        }
+      }, 5e3);
+      const waitForExit = setInterval(() => {
+        if (exited && !settled) {
+          clearInterval(waitForExit);
+          settled = true;
+          reject(
+            new Error(
+              `fern automations upgrade timed out after ${UPGRADE_TIMEOUT_MS / 6e4} minutes`
+            )
+          );
+        }
+      }, 100);
+    }, UPGRADE_TIMEOUT_MS);
   });
   if (exitCode !== 0) {
     throw new Error(
@@ -24296,18 +24327,28 @@ async function runAutomationsUpgrade({
 stderr: ${stderr.slice(0, 2e3)}`
     );
   }
-  if (!stdout.trim()) {
+  return parseUpgradeOutput(stdout);
+}
+function parseUpgradeOutput(stdout) {
+  const trimmed = stdout.trim();
+  if (!trimmed) {
     throw new Error(
       "fern automations upgrade produced no JSON output on stdout. Ensure the CLI version supports 'fern automations upgrade --json'."
     );
   }
-  const parsed = JSON.parse(stdout.trim());
-  if (!parsed.cli || !Array.isArray(parsed.generators)) {
+  let parsed;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    throw new Error(`fern automations upgrade returned invalid JSON: ${trimmed.slice(0, 200)}`);
+  }
+  const result = parsed;
+  if (!result.cli || !Array.isArray(result.generators)) {
     throw new Error(
-      `fern automations upgrade returned unexpected JSON schema. Expected { cli, generators, ... } \u2014 got: ${stdout.trim().slice(0, 200)}`
+      `fern automations upgrade returned unexpected JSON schema. Expected { cli, generators, ... } \u2014 got: ${trimmed.slice(0, 200)}`
     );
   }
-  return parsed;
+  return result;
 }
 
 // src/index.ts
