@@ -8,8 +8,16 @@ inputs:
     required: false
     default: "latest"
   fern-token:
-    description: "Fern token for API access and PR creation"
+    description: "Fern token for API access and CLI authentication"
     required: true
+  include-major:
+    description: "Whether to include major version upgrades for generators. Both the CLI and GHA default to true — the automations upgrade command is designed to aggressively upgrade, letting the preview action validate breaking changes. Set to 'false' for minor/patch only."
+    required: false
+    default: "true"
+  github-token:
+    description: "GitHub token for PR creation and push access. Falls back to default GITHUB_TOKEN."
+    required: false
+    default: ${{ github.token }}
 
 outputs:
   run-id:
@@ -20,6 +28,10 @@ outputs:
     description: "Whether the Fern CLI version was upgraded"
   generators-upgraded:
     description: "JSON array of {generator, from, to} for each upgraded generator"
+
+branding:
+  icon: "arrow-up-circle"
+  color: "green"
 
 runs:
   using: "node20"
