@@ -19428,7 +19428,7 @@ var require_exec = __commonJS({
     exports2.getExecOutput = exports2.exec = void 0;
     var string_decoder_1 = require("string_decoder");
     var tr = __importStar(require_toolrunner());
-    function exec3(commandLine, args, options) {
+    function exec4(commandLine, args, options) {
       return __awaiter(this, void 0, void 0, function* () {
         const commandArgs = tr.argStringToArray(commandLine);
         if (commandArgs.length === 0) {
@@ -19440,8 +19440,8 @@ var require_exec = __commonJS({
         return runner.exec();
       });
     }
-    exports2.exec = exec3;
-    function getExecOutput(commandLine, args, options) {
+    exports2.exec = exec4;
+    function getExecOutput2(commandLine, args, options) {
       var _a, _b;
       return __awaiter(this, void 0, void 0, function* () {
         let stdout = "";
@@ -19463,7 +19463,7 @@ var require_exec = __commonJS({
           }
         };
         const listeners = Object.assign(Object.assign({}, options === null || options === void 0 ? void 0 : options.listeners), { stdout: stdOutListener, stderr: stdErrListener });
-        const exitCode = yield exec3(commandLine, args, Object.assign(Object.assign({}, options), { listeners }));
+        const exitCode = yield exec4(commandLine, args, Object.assign(Object.assign({}, options), { listeners }));
         stdout += stdoutDecoder.end();
         stderr += stderrDecoder.end();
         return {
@@ -19473,7 +19473,7 @@ var require_exec = __commonJS({
         };
       });
     }
-    exports2.getExecOutput = getExecOutput;
+    exports2.getExecOutput = getExecOutput2;
   }
 });
 
@@ -19541,12 +19541,12 @@ var require_platform = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.getDetails = exports2.isLinux = exports2.isMacOS = exports2.isWindows = exports2.arch = exports2.platform = void 0;
     var os_1 = __importDefault(require("os"));
-    var exec3 = __importStar(require_exec());
+    var exec4 = __importStar(require_exec());
     var getWindowsInfo = () => __awaiter(void 0, void 0, void 0, function* () {
-      const { stdout: version } = yield exec3.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Version"', void 0, {
+      const { stdout: version } = yield exec4.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Version"', void 0, {
         silent: true
       });
-      const { stdout: name } = yield exec3.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Caption"', void 0, {
+      const { stdout: name } = yield exec4.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Caption"', void 0, {
         silent: true
       });
       return {
@@ -19556,7 +19556,7 @@ var require_platform = __commonJS({
     });
     var getMacOsInfo = () => __awaiter(void 0, void 0, void 0, function* () {
       var _a, _b, _c, _d;
-      const { stdout } = yield exec3.getExecOutput("sw_vers", void 0, {
+      const { stdout } = yield exec4.getExecOutput("sw_vers", void 0, {
         silent: true
       });
       const version = (_b = (_a = stdout.match(/ProductVersion:\s*(.+)/)) === null || _a === void 0 ? void 0 : _a[1]) !== null && _b !== void 0 ? _b : "";
@@ -19567,7 +19567,7 @@ var require_platform = __commonJS({
       };
     });
     var getLinuxInfo = () => __awaiter(void 0, void 0, void 0, function* () {
-      const { stdout } = yield exec3.getExecOutput("lsb_release", ["-i", "-r", "-s"], {
+      const { stdout } = yield exec4.getExecOutput("lsb_release", ["-i", "-r", "-s"], {
         silent: true
       });
       const [name, version] = stdout.trim().split("\n");
@@ -19752,10 +19752,10 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       (0, command_1.issueCommand)("error", (0, utils_1.toCommandProperties)(properties), message instanceof Error ? message.toString() : message);
     }
     exports2.error = error;
-    function warning(message, properties = {}) {
+    function warning2(message, properties = {}) {
       (0, command_1.issueCommand)("warning", (0, utils_1.toCommandProperties)(properties), message instanceof Error ? message.toString() : message);
     }
-    exports2.warning = warning;
+    exports2.warning = warning2;
     function notice(message, properties = {}) {
       (0, command_1.issueCommand)("notice", (0, utils_1.toCommandProperties)(properties), message instanceof Error ? message.toString() : message);
     }
@@ -19989,7 +19989,7 @@ var require_dist = __commonJS({
       return resolved;
     }
     var core5 = __toESM2(require_core());
-    var exec3 = __toESM2(require_exec());
+    var exec4 = __toESM2(require_exec());
     var io2 = __toESM2(require_io());
     async function installFernCli(version) {
       const npm = await io2.which("npm", false);
@@ -20001,9 +20001,9 @@ var require_dist = __commonJS({
         throw new Error("node is not available. Please add a Node.js setup step before this action.");
       }
       const pkg = version === "latest" || version === "auto" ? "fern-api" : `fern-api@${version}`;
-      await exec3.exec("npm", ["install", "-g", pkg]);
+      await exec4.exec("npm", ["install", "-g", pkg]);
       let stdout = "";
-      await exec3.exec("fern", ["--version"], {
+      await exec4.exec("fern", ["--version"], {
         env: { ...process.env, FERN_NO_VERSION_REDIRECTION: "true" },
         listeners: {
           stdout: (data) => {
@@ -24257,8 +24257,8 @@ async function pushAndManagePr({
 }
 
 // src/run-upgrade.ts
-var import_node_child_process = require("child_process");
 var core2 = __toESM(require_core());
+var exec3 = __toESM(require_exec());
 var UPGRADE_TIMEOUT_MS = 10 * 60 * 1e3;
 async function runAutomationsUpgrade({
   cli,
@@ -24269,65 +24269,34 @@ async function runAutomationsUpgrade({
   if (!includeMajor) {
     args.push("--no-include-major");
   }
-  let stdout = "";
-  let stderr = "";
-  const exitCode = await new Promise((resolve, reject) => {
-    let settled = false;
-    let exited = false;
-    const child = (0, import_node_child_process.spawn)(cli.command, args, {
-      env: { ...process.env, FERN_TOKEN: fernToken },
-      stdio: ["ignore", "pipe", "pipe"]
-    });
-    child.stdout.on("data", (data) => {
-      stdout += data.toString();
-    });
-    child.stderr.on("data", (data) => {
-      const chunk = data.toString();
-      stderr += chunk;
-      core2.info(chunk.trimEnd());
-    });
-    child.on("close", (code) => {
-      exited = true;
-      clearTimeout(timer);
-      if (!settled) {
-        settled = true;
-        resolve(code ?? 1);
+  const cliExec = exec3.getExecOutput(cli.command, args, {
+    env: { ...process.env, FERN_TOKEN: fernToken },
+    ignoreReturnCode: true,
+    silent: true,
+    listeners: {
+      stderr: (data) => {
+        core2.info(data.toString().trimEnd());
       }
-    });
-    child.on("error", (err) => {
-      clearTimeout(timer);
-      if (!settled) {
-        settled = true;
-        reject(err);
-      }
-    });
-    const timer = setTimeout(() => {
-      child.kill("SIGTERM");
-      setTimeout(() => {
-        if (!exited) {
-          child.kill("SIGKILL");
-        }
-      }, 5e3);
-      const waitForExit = setInterval(() => {
-        if (exited && !settled) {
-          clearInterval(waitForExit);
-          settled = true;
-          reject(
-            new Error(
-              `fern automations upgrade timed out after ${UPGRADE_TIMEOUT_MS / 6e4} minutes`
-            )
-          );
-        }
-      }, 100);
-    }, UPGRADE_TIMEOUT_MS);
+    }
   });
-  if (exitCode !== 0) {
+  const timeout = new Promise((_resolve, reject) => {
+    setTimeout(
+      () => reject(
+        new Error(
+          `fern automations upgrade timed out after ${UPGRADE_TIMEOUT_MS / 6e4} minutes`
+        )
+      ),
+      UPGRADE_TIMEOUT_MS
+    );
+  });
+  const result = await Promise.race([cliExec, timeout]);
+  if (result.exitCode !== 0) {
     throw new Error(
-      `fern automations upgrade failed with exit code ${exitCode}.
-stderr: ${stderr.slice(0, 2e3)}`
+      `fern automations upgrade failed with exit code ${result.exitCode}.
+stderr: ${result.stderr.slice(0, 2e3)}`
     );
   }
-  return parseUpgradeOutput(stdout);
+  return parseUpgradeOutput(result.stdout);
 }
 function parseUpgradeOutput(stdout) {
   const trimmed = stdout.trim();
@@ -24348,16 +24317,32 @@ function parseUpgradeOutput(stdout) {
       `fern automations upgrade returned unexpected JSON schema. Expected { cli, generators, ... } \u2014 got: ${trimmed.slice(0, 200)}`
     );
   }
+  if (result.pr != null) {
+    if (!result.pr.title || !result.pr.body || !result.pr.commitMessage) {
+      throw new Error(
+        "fern automations upgrade returned pr object with missing fields. Expected { title, body, commitMessage }."
+      );
+    }
+  }
   return result;
 }
 
 // src/index.ts
 function parseInputs() {
+  const githubToken = core3.getInput("github-token") || process.env.GITHUB_TOKEN || "";
+  if (!githubToken) {
+    throw new Error(
+      "github-token is required. Provide it as an input or ensure GITHUB_TOKEN is available."
+    );
+  }
   return {
     fernToken: (0, import_shared.getRequiredFernToken)(),
+    // "latest" is intentional: the upgrade action should always use the newest CLI
+    // release to perform upgrades, regardless of fern.config.json. This differs from
+    // the generate action which uses "auto" (respects version pinning).
     version: core3.getInput("version") || "latest",
     includeMajor: core3.getBooleanInput("include-major"),
-    githubToken: core3.getInput("github-token") || process.env.GITHUB_TOKEN || ""
+    githubToken
   };
 }
 async function run(inputs) {
@@ -24379,6 +24364,7 @@ async function run(inputs) {
     core3.setOutput("generators-upgraded", JSON.stringify([]));
     return;
   }
+  core3.info(`PR title: ${json.pr.title}`);
   core3.setOutput("cli-upgraded", String(json.cli.upgraded));
   core3.setOutput(
     "generators-upgraded",
@@ -24390,6 +24376,11 @@ async function run(inputs) {
     prBody: json.pr.body,
     githubToken: inputs.githubToken
   });
+  if (!prUrl) {
+    core3.warning(
+      "CLI reported upgrades available (pr is non-null) but no file changes were detected. This may indicate a bug in the file copy/staging logic."
+    );
+  }
   core3.setOutput("pr-url", prUrl);
 }
 (0, import_shared.runAction)(async () => {

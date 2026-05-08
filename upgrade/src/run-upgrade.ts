@@ -1,5 +1,5 @@
-import { spawn } from "node:child_process";
 import * as core from "@actions/core";
+import * as exec from "@actions/exec";
 import type { ResolvedFernCli } from "@fern-github-actions/shared";
 
 export interface GeneratorUpgradeEntry {
@@ -50,75 +50,38 @@ export async function runAutomationsUpgrade({
     args.push("--no-include-major");
   }
 
-  let stdout = "";
-  let stderr = "";
-
-  const exitCode = await new Promise<number>((resolve, reject) => {
-    let settled = false;
-    let exited = false;
-
-    const child = spawn(cli.command, args, {
-      env: { ...process.env, FERN_TOKEN: fernToken },
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-
-    child.stdout.on("data", (data: Buffer) => {
-      stdout += data.toString();
-    });
-    child.stderr.on("data", (data: Buffer) => {
-      const chunk = data.toString();
-      stderr += chunk;
-      core.info(chunk.trimEnd());
-    });
-
-    child.on("close", (code) => {
-      exited = true;
-      clearTimeout(timer);
-      if (!settled) {
-        settled = true;
-        resolve(code ?? 1);
-      }
-    });
-
-    child.on("error", (err) => {
-      clearTimeout(timer);
-      if (!settled) {
-        settled = true;
-        reject(err);
-      }
-    });
-
-    const timer = setTimeout(() => {
-      child.kill("SIGTERM");
-      // Give the process 5 seconds to exit gracefully, then force-kill
-      setTimeout(() => {
-        if (!exited) {
-          child.kill("SIGKILL");
-        }
-      }, 5000);
-      // Wait for the process to actually die before rejecting, so the caller
-      // doesn't race with a still-alive child writing to the working directory.
-      const waitForExit = setInterval(() => {
-        if (exited && !settled) {
-          clearInterval(waitForExit);
-          settled = true;
-          reject(
-            new Error(
-              `fern automations upgrade timed out after ${UPGRADE_TIMEOUT_MS / 60000} minutes`
-            )
-          );
-        }
-      }, 100);
-    }, UPGRADE_TIMEOUT_MS);
+  const cliExec = exec.getExecOutput(cli.command, args, {
+    env: { ...process.env, FERN_TOKEN: fernToken },
+    ignoreReturnCode: true,
+    silent: true,
+    listeners: {
+      stderr: (data: Buffer) => {
+        core.info(data.toString().trimEnd());
+      },
+    },
   });
 
-  if (exitCode !== 0) {
+  const timeout = new Promise<never>((_resolve, reject) => {
+    setTimeout(
+      () =>
+        reject(
+          new Error(
+            `fern automations upgrade timed out after ${UPGRADE_TIMEOUT_MS / 60000} minutes`
+          )
+        ),
+      UPGRADE_TIMEOUT_MS
+    );
+  });
+
+  const result = await Promise.race([cliExec, timeout]);
+
+  if (result.exitCode !== 0) {
     throw new Error(
-      `fern automations upgrade failed with exit code ${exitCode}.\nstderr: ${stderr.slice(0, 2000)}`
+      `fern automations upgrade failed with exit code ${result.exitCode}.\nstderr: ${result.stderr.slice(0, 2000)}`
     );
   }
 
-  return parseUpgradeOutput(stdout);
+  return parseUpgradeOutput(result.stdout);
 }
 
 /**
@@ -148,5 +111,16 @@ export function parseUpgradeOutput(stdout: string): AutomationsUpgradeJson {
       `fern automations upgrade returned unexpected JSON schema. Expected { cli, generators, ... } — got: ${trimmed.slice(0, 200)}`
     );
   }
+
+  // Validate pr sub-fields when pr is present
+  if (result.pr != null) {
+    if (!result.pr.title || !result.pr.body || !result.pr.commitMessage) {
+      throw new Error(
+        "fern automations upgrade returned pr object with missing fields. " +
+          "Expected { title, body, commitMessage }."
+      );
+    }
+  }
+
   return result;
 }

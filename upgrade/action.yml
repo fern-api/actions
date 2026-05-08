@@ -29,6 +29,10 @@ outputs:
   generators-upgraded:
     description: "JSON array of {generator, from, to} for each upgraded generator"
 
+branding:
+  icon: "arrow-up-circle"
+  color: "green"
+
 runs:
   using: "node20"
   main: "dist/index.js"
