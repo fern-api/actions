@@ -1,11 +1,13 @@
 export * from "./types.js";
 export * from "./run-id.js";
-export * from "./telemetry.js";
 export * from "./post-phase.js";
 export * from "./fern-cli.js";
 export * from "./install-cli.js";
+export * from "./project-config.js";
+export * from "./telemetry/index.js";
 
 import * as core from "@actions/core";
+import { flushTelemetry } from "./telemetry/telemetry.js";
 import type { Repository } from "./types.js";
 
 /**
@@ -48,13 +50,17 @@ export function getOptionalInput(name: string): string | undefined {
 
 /**
  * Wraps action execution with top-level error handling and core.setFailed.
+ * Flushes the PostHog and Sentry SDK buffers before exiting so events
+ * emitted by `instrumentAction` are not lost on failure.
  */
 export async function runAction(fn: () => Promise<void>): Promise<void> {
   try {
     await fn();
+    await flushTelemetry();
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     core.setFailed(message);
+    await flushTelemetry();
     process.exit(1);
   }
 }

@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import {
   getOrCreateRunId,
   getRequiredFernToken,
+  injectFernToken,
   instrumentAction,
   isPostPhase,
   markMainPhaseStarted,
@@ -44,6 +45,7 @@ runAction(async () => {
 
   await instrumentAction("upgrade", async () => {
     const inputs = parseInputs();
+    injectFernToken(inputs.fernToken);
     await run(inputs);
   });
 });
