@@ -1,6 +1,11 @@
 import * as core from "@actions/core";
 import { PostHog } from "posthog-node";
-import { POSTHOG_API_KEY, POSTHOG_HOST, isGithubActionsRunner } from "./build-constants.js";
+import {
+  POSTHOG_API_KEY,
+  POSTHOG_HOST,
+  RELEASE_TAG,
+  isGithubActionsRunner,
+} from "./build-constants.js";
 import type { TelemetryContext, TelemetryEvent } from "./types.js";
 
 let client: PostHog | null = null;
@@ -38,6 +43,8 @@ export function capturePostHogEvent(event: TelemetryEvent, context: TelemetryCon
       event: event.event,
       properties: {
         $lib: "fern-actions",
+        $lib_version: RELEASE_TAG,
+        actions_version: RELEASE_TAG,
         surface: "actions",
         action: context.action,
         run_id: context.runId,

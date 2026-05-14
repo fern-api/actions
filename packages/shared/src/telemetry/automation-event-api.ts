@@ -1,5 +1,5 @@
 import * as core from "@actions/core";
-import { AUTOMATION_EVENT_API_URL, isGithubActionsRunner } from "./build-constants.js";
+import { AUTOMATION_EVENT_API_URL, RELEASE_TAG, isGithubActionsRunner } from "./build-constants.js";
 import type { TelemetryContext, TelemetryEvent } from "./types.js";
 
 const TIMEOUT_MS = 5000;
@@ -46,6 +46,7 @@ async function postAutomationEvent(
     event: event.event,
     timestamp: new Date().toISOString(),
     surface: "actions",
+    actions_version: RELEASE_TAG,
     action: context.action,
     run_id: context.runId,
     github_run_id: context.githubRunId,

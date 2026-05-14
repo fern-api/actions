@@ -6,10 +6,13 @@ node_modules/
 .pnpm-debug.log
 
 # Build outputs
-# NOTE: actions/*/dist/ must be committed for real actions - GitHub runners execute dist/index.js directly
+# NOTE: actions/*/dist/index.js must be committed for real actions - GitHub runners execute dist/index.js directly
+# Sourcemaps are NOT committed to main: they're uploaded to Sentry by the release workflow
+# and only live on the dist/<action> orphan branches alongside the bundle.
 # The example-action dist is excluded as it's only a template
 packages/*/dist/
 actions/example-action/dist/
+*/dist/*.map
 build/
 out/
 lib/

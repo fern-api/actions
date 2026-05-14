@@ -5,6 +5,7 @@ import {
   injectFernToken as setFernAutomationsToken,
   shutdownFernAutomations,
 } from "./automation-event-api.js";
+import { RELEASE_TAG } from "./build-constants.js";
 import { WrapperError } from "./errors.js";
 import { capturePostHogEvent, shutdownPostHog } from "./posthog.js";
 import { captureSentryEvent, shutdownSentry } from "./sentry.js";
@@ -95,6 +96,7 @@ class TelemetryClient {
     const logPayload = {
       event: event.event,
       action: context.action,
+      actions_version: RELEASE_TAG,
       ...(event.errorCode !== undefined ? { error_code: event.errorCode } : {}),
       run_id: context.runId,
       github_run_id: context.githubRunId,
