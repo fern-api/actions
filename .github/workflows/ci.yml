@@ -81,10 +81,12 @@ jobs:
 
       - name: Verify bundles exist
         run: |
-          for action_dir in example-action preview upgrade verify; do
-            # Skip composite actions (no package.json = no build output expected)
+          # Bundles aren't tracked on main anymore — they're produced by the
+          # preceding `pnpm build` step. This step just confirms the build
+          # actually emitted a dist/index.js for every Node.js action.
+          for action_dir in example-action generate preview resolve-cli setup-cli sync-openapi upgrade verify verify-token; do
             if [ ! -f "${action_dir}/package.json" ]; then
-              echo "SKIP: ${action_dir} is a composite action (no package.json)"
+              echo "SKIP: ${action_dir} has no package.json"
               continue
             fi
             bundle="${action_dir}/dist/index.js"
@@ -94,19 +96,3 @@ jobs:
             fi
             echo "OK: $bundle exists ($(du -sh "$bundle" | cut -f1))"
           done
-
-      - name: Check dist is committed
-        run: |
-          # Only check actions that have a package.json (Node.js actions with build output)
-          stale=""
-          for action_dir in example-action preview upgrade verify; do
-            [ -f "${action_dir}/package.json" ] || continue
-            stale+="$(git status --porcelain "${action_dir}/dist/")"
-          done
-          if [ -n "$stale" ]; then
-            echo "WARNING: dist/ files differ from committed versions."
-            echo "Run 'pnpm build' and commit the results."
-            git diff --stat ./*/dist/
-          else
-            echo "All dist/ files are up to date."
-          fi
