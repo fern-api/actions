@@ -3,6 +3,7 @@ import * as github from "@actions/github";
 import {
   getOptionalInput,
   getRequiredFernToken,
+  injectFernToken,
   installFernCli,
   instrumentAction,
   isPostPhase,
@@ -76,6 +77,7 @@ runAction(async () => {
     if (inputs.githubToken) {
       core.setSecret(inputs.githubToken);
     }
+    injectFernToken(inputs.fernToken);
     await run(inputs);
   });
 });
