@@ -156,7 +156,7 @@ jobs:
       - name: Detect Sentry provisioning
         id: gate
         env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.FERN_SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: buildwithfern
           SENTRY_PROJECT: automations-actions
         run: |
@@ -171,7 +171,7 @@ jobs:
         if: steps.gate.outputs.skip != 'true'
         uses: getsentry/action-release@v1
         env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.FERN_SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: buildwithfern
           SENTRY_PROJECT: automations-actions
         with:

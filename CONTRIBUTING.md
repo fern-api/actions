@@ -103,7 +103,7 @@ Or from the UI: **Actions → Release Action → Run workflow**, pick the action
 
 1. **validate** — semver-checks the version, rejects `example-action`, hard-fails if the tag already exists
 2. **build** — installs deps, builds shared + the selected action with `RELEASE_TAG`, `POSTHOG_API_KEY`, `SENTRY_DSN_AUTOMATIONS`, `AUTOMATION_EVENT_API_URL` baked into the bundle via tsup's `env` map. Asserts the substitution actually happened
-3. **sentry-release** — creates a Sentry release named `<action>@<version>` and uploads sourcemaps. Auto-skips if `SENTRY_AUTH_TOKEN` is not provisioned
+3. **sentry-release** — creates a Sentry release named `<action>@<version>` and uploads sourcemaps. Auto-skips if `FERN_SENTRY_AUTH_TOKEN` is not provisioned
 4. **publish-dist** — checks out (or orphan-creates) `dist/<action>`, copies in the freshly built `dist/` and `action.yml`, commits with `Source:` / `Built from:` lines referencing the source SHA, pushes, then tags `<action>@<version>` on that commit
 5. **alias-tags** — force-moves `<action>@v<major>` and `<action>@v<major>.<minor>` aliases (skipped on prerelease)
 6. **github-release** — `gh release create <action>@<version> --generate-notes`
@@ -123,7 +123,7 @@ Set the following at **Settings → Secrets and variables → Actions**:
 
 | Type | Name | Description |
 |---|---|---|
-| Secret | `SENTRY_AUTH_TOKEN` | Sentry user/org token with `project:releases` scope. Without it, the `sentry-release` job auto-skips |
+| Secret | `FERN_SENTRY_AUTH_TOKEN` | Sentry user/org token with `project:releases` scope. Same secret as the fern repo so a single token covers all release pipelines. Without it, the `sentry-release` job auto-skips |
 | Variable | `SENTRY_ORG` | Sentry org slug (e.g. `buildwithfern`) |
 | Variable | `SENTRY_PROJECT` | Sentry project slug (e.g. `automations-actions`) |
 | Variable | `POSTHOG_API_KEY` | PostHog project key. Empty = PostHog stays no-op |
