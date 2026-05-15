@@ -1,0 +1,29 @@
+name: "Fern SDK Preview"
+description: "Auto-detect TypeScript SDK groups, publish preview packages, and post PR comments with install links and SDK diff links"
+author: "Fern"
+
+inputs:
+  fern-token:
+    description: "Fern authentication token (FERN_TOKEN)"
+    required: true
+  fern-version:
+    description: "Fern CLI version to install. 'auto' (default) installs the latest release; the CLI self-redirects to the version pinned in fern.config.json at runtime. Use 'latest' for the newest release, or pin to a specific version (e.g. '3.98.5')."
+    required: false
+    default: "auto"
+  github-token:
+    description: "GitHub token used to post the PR comment. Defaults to ${{ github.token }}."
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  results:
+    description: "JSON array of preview results (status, groupName, packageName, installCommand, version)"
+
+runs:
+  using: "node20"
+  main: "dist/index.js"
+  post: "dist/index.js"
+
+branding:
+  icon: "package"
+  color: "green"
