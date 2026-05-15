@@ -30,6 +30,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # dist/ is no longer tracked on main, so we must build resolve-cli
+      # before the `uses: ./resolve-cli` step can load dist/index.js.
+      - name: Build resolve-cli
+        run: |
+          pnpm --filter "@fern-github-actions/shared" build
+          pnpm --filter "@fern-github-actions/resolve-cli" build
+
       - name: Resolve CLI
         id: cli
         uses: ./resolve-cli
