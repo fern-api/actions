@@ -4,22 +4,31 @@
 
 ```
 fern-api/actions/
-├── setup-cli/              # Composite action — action.yml + README only
-├── resolve-cli/            # Composite action
-├── verify-token/           # Composite action
-├── sync-openapi/           # Node.js action — TypeScript, built to dist/
-├── preview/                # Hybrid composite+Node.js — ALPHA
-├── generate/               # Composite action (ALPHA)
+├── setup-cli/              # Node.js action — TypeScript, bundled to dist/index.js at release time
+├── resolve-cli/            # Node.js action
+├── verify-token/           # Node.js action
+├── sync-openapi/           # Node.js action
+├── preview/                # Node.js action — ALPHA
+├── generate/               # Node.js action — ALPHA
 ├── upgrade/                # Node.js action — ALPHA
 ├── verify/                 # Node.js action — ALPHA
 ├── example-action/         # Template — not released
 ├── packages/
-│   └── shared/             # Shared utilities, bundled into each Node.js action at build time
+│   └── shared/             # Shared utilities, bundled into each action via tsup `noExternal`
+├── scripts/
+│   ├── build-env.ts        # Env map used by every tsup.config.ts for build-time substitution
+│   └── append-release-entry.mjs  # Maintains <action>/RELEASES.md on main per release
 ├── .github/workflows/
 │   ├── ci.yml              # Runs on every push/PR: typecheck, lint, test, build verify
-│   └── release.yml         # Runs on release publish: moves alias tags on this repo
+│   └── release.yml         # workflow_dispatch — see "Releasing" below
 └── biome.json              # Lint + format config (replaces ESLint + Prettier)
 ```
+
+### Where bundles live
+
+Source code lives on `main`. **Bundled `dist/index.js` files are not committed to `main`** — they're published per-release to per-action orphan branches (`dist/<action>`) by the release workflow. Consumers reference actions via tags (e.g. `uses: fern-api/actions/setup-cli@v1`), which point at commits on those orphan branches.
+
+Local `pnpm build` still produces `dist/` directories — they're gitignored. You only need to run a build to typecheck the bundling step or to test a bundle locally.
 
 ## Prerequisites
 
@@ -37,7 +46,7 @@ Or manually ensure Node >= 20 and pnpm >= 9 are installed.
 pnpm install
 ```
 
-This installs all workspace dependencies and sets up [lefthook](https://github.com/evilmartians/lefthook) pre-commit hooks.
+This installs all workspace dependencies and sets up [lefthook](https://github.com/evilmartians/lefthook) pre-commit hooks (run `pnpm check` and `pnpm typecheck` on every commit).
 
 ## Development
 
@@ -46,83 +55,84 @@ pnpm typecheck       # TypeScript type checking across all packages
 pnpm test            # Run all tests (vitest)
 pnpm check           # Biome lint + format check
 pnpm check:fix       # Auto-fix lint + format issues
-pnpm build           # Build all Node.js actions (produces dist/index.js per action)
+pnpm build           # Build all Node.js actions (produces dist/ per action — gitignored)
 ```
 
-Pre-commit hooks run `pnpm check` and `pnpm typecheck` automatically on every commit.
-
 ## Adding a new action
-
-### Node.js action
 
 1. Copy `example-action/` as a starting point.
 2. Update `package.json` — set `name` to `@fern-github-actions/<your-action>`.
 3. Update `action.yml` — set `runs.using: node20` and `runs.main: dist/index.js`.
 4. Implement logic in `src/index.ts`; write tests in `tests/`.
-5. Ensure `tsup.config.ts` keeps `noExternal: [/.*/]` — this bundles all deps into a single `dist/index.js` required for GitHub Actions runners.
-6. Run `pnpm build` and commit the generated `dist/` (runners execute it directly, no install step).
+5. Keep `tsup.config.ts` as the canonical shape — `noExternal: [/.*/]` (bundles all deps inline, required for GitHub Actions runners), `sourcemap: true`, and `env: getBuildEnv()` (build-time env injection for telemetry constants).
+6. Run `pnpm build` to verify it bundles cleanly. **Do not commit `dist/`** — it's gitignored and gets published to the `dist/<your-action>` orphan branch the first time you run the release workflow against this action.
+7. Add the new action to the workflow_dispatch `action` choice list in `.github/workflows/release.yml`.
 
-### Composite action
+Wire the telemetry wrapper from inside `src/index.ts` (see existing actions for the pattern):
 
-1. Create `<your-action>/action.yml` and `<your-action>/README.md`.
-2. No `package.json`, no `dist/` — composite actions run shell steps directly.
-
-### Hybrid composite + Node.js action
-
-Use this when you need composite steps (e.g. installing a CLI) **before** running Node.js logic.
-
-1. Set `runs.using: composite` in `action.yml`.
-2. Add composite steps for setup (e.g. `uses: fern-api/actions/setup-cli@...`).
-3. Add a final step that runs `node ${{ github.action_path }}/dist/index.js`.
-4. Structure the TypeScript source the same as a Node.js action (`src/`, `tsup.config.ts`, tests).
-5. Commit `dist/` like a normal Node.js action — the composite step executes it directly.
-
-`preview` uses this pattern: composite steps install the Fern CLI, then a shell step runs the bundled JS that calls the CLI and posts PR comments.
+```ts
+runAction(async () => {
+  if (isPostPhase()) {
+    runPostCleanup();
+    return;
+  }
+  markMainPhaseStarted();
+  await instrumentAction("<your-action>", async () => {
+    // parse inputs, do work
+  });
+});
+```
 
 ## Releasing
 
-All actions are referenced directly from `fern-api/actions` — consumers use `uses: fern-api/actions/<name>@<version>`. No mirroring to standalone repos.
+All actions are versioned independently. Tags are immutable and follow `<action-name>@<version>`, e.g. `sync-openapi@v4.1.0`. Floating major/minor aliases (`sync-openapi@v4`, `sync-openapi@v4.1`) are moved automatically.
 
-### Tag format
+### How to release
 
-```
-<action-name>@<version>
-```
-
-Examples: `sync-openapi@v4.1.0`, `setup-cli@v1.2.0`
-
-Each action is versioned independently.
-
-### Release steps
+Releases happen via the [`release.yml`](.github/workflows/release.yml) workflow's `workflow_dispatch` trigger:
 
 ```sh
-# 1. Tag the commit
-git tag sync-openapi@v4.1.0
-git push origin sync-openapi@v4.1.0
-
-# 2. Create the GitHub Release (triggers the release workflow)
-gh release create sync-openapi@v4.1.0 --generate-notes
+gh workflow run release.yml \
+  -f action=sync-openapi \
+  -f version=v4.1.0
 ```
 
-The [release workflow](.github/workflows/release.yml) then automatically moves the major and minor alias tags (e.g. `sync-openapi@v4`, `sync-openapi@v4.1`) on this repo so consumers pinned to a major version get the update immediately.
+Or from the UI: **Actions → Release Action → Run workflow**, pick the action, type the version (with `v` prefix), optionally tick "prerelease".
 
-### Pre-release
+### What the workflow does
 
-Add the `--prerelease` flag:
+1. **validate** — semver-checks the version, rejects `example-action`, hard-fails if the tag already exists
+2. **build** — installs deps, builds shared + the selected action with `RELEASE_TAG`, `POSTHOG_API_KEY`, `SENTRY_DSN_AUTOMATIONS`, `AUTOMATION_EVENT_API_URL` baked into the bundle via tsup's `env` map. Asserts the substitution actually happened
+3. **sentry-release** — creates a Sentry release named `<action>@<version>` and uploads sourcemaps. Auto-skips if `FERN_SENTRY_AUTH_TOKEN` is not provisioned
+4. **publish-dist** — checks out (or orphan-creates) `dist/<action>`, copies in the freshly built `dist/` and `action.yml`, commits with `Source:` / `Built from:` lines referencing the source SHA, pushes, then tags `<action>@<version>` on that commit
+5. **alias-tags** — force-moves `<action>@v<major>` and `<action>@v<major>.<minor>` aliases (skipped on prerelease)
+6. **github-release** — `gh release create <action>@<version> --generate-notes`
+7. **main-release-marker** — prepends an entry to `<action>/RELEASES.md` on main via `scripts/append-release-entry.mjs` and pushes a `chore(release): <action>@<version>` commit. Best-effort: a failed push (e.g. branch protection) logs a warning but does not roll back the release
 
-```sh
-gh release create sync-openapi@v4.1.0-beta.1 --generate-notes --prerelease
-```
+### Prereleases
 
-Alias tags (`v4`, `v4.1`) are not moved for pre-releases.
+Set `prerelease: true`. Examples of valid prerelease versions: `v4.1.0-beta.1`, `v4.1.0-rc.2`. The floating major/minor aliases are not moved.
 
-### Required secrets
+### Backward compatibility note
 
-The following secret must be set on this repository (Settings → Secrets and variables → Actions):
+Old tags (if any) point at historical commits on `main` from before this workflow existed — those still work because they reference commits that had `dist/` committed. Going forward, tags point at commits on `dist/<action>` branches instead. Either way, consumers using tagged refs (`@v1`, `@v1.2.3`) are unaffected. Consumers using `@main` will break — pin to a tag.
 
-| Secret | Description |
-|---|---|
-| `ACTIONS_RELEASE_TOKEN` | GitHub PAT with `contents: write` on this repo for pushing version alias tags. |
+### Required configuration
+
+Set the following at **Settings → Secrets and variables → Actions**:
+
+| Type | Name | Description |
+|---|---|---|
+| Secret | `FERN_SENTRY_AUTH_TOKEN` | Sentry user/org token with `project:releases` scope. Same secret as the fern repo so a single token covers all release pipelines. Without it, the `sentry-release` job auto-skips |
+| Variable | `SENTRY_ORG` | Sentry org slug (e.g. `buildwithfern`) |
+| Variable | `SENTRY_PROJECT` | Sentry project slug (e.g. `automations-actions`) |
+| Variable | `POSTHOG_API_KEY` | PostHog project key. Empty = PostHog stays no-op |
+| Variable | `SENTRY_DSN_AUTOMATIONS` | Sentry DSN for runtime event capture. Empty = capture stays no-op |
+| Variable | `AUTOMATION_EVENT_API_URL` | Fern Lightweight API base URL. Empty = stays no-op |
+
+PostHog API keys and Sentry DSNs are not secrets — they're write-only at the project level and designed to be embedded in client code. Storing them as **vars** makes that explicit and avoids the masked-output noise of secrets in logs.
+
+The default `GITHUB_TOKEN` (`contents: write` from the workflow's own permissions block) handles tag pushes, dist branch pushes, GitHub Release creation, and the marker commit on main.
 
 ## Action reference
 
@@ -130,6 +140,8 @@ The following secret must be set on this repository (Settings → Secrets and va
 |---|---|
 | `sync-openapi` | `uses: fern-api/actions/sync-openapi@v4` |
 | `setup-cli` | `uses: fern-api/actions/setup-cli@v1` |
+| `resolve-cli` | `uses: fern-api/actions/resolve-cli@v1` |
+| `verify-token` | `uses: fern-api/actions/verify-token@v1` |
 | `preview` | `uses: fern-api/actions/preview@v1` _(alpha)_ |
 | `generate` | `uses: fern-api/actions/generate@v1` _(alpha)_ |
 | `upgrade` | `uses: fern-api/actions/upgrade@v1` _(alpha)_ |

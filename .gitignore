@@ -6,10 +6,13 @@ node_modules/
 .pnpm-debug.log
 
 # Build outputs
-# NOTE: actions/*/dist/ must be committed for real actions - GitHub runners execute dist/index.js directly
-# The example-action dist is excluded as it's only a template
+# Action bundles are NOT committed to main. They're published to per-action
+# orphan branches `dist/<action>` by .github/workflows/release.yml — see that
+# workflow for how dist/index.js + dist/index.js.map land on the dist branch.
+# Local `pnpm build` still produces dist/ for typecheck/tests; just don't
+# commit it.
+*/dist/
 packages/*/dist/
-actions/example-action/dist/
 build/
 out/
 lib/

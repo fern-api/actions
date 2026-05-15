@@ -1,4 +1,5 @@
 import { defineConfig } from "tsup";
+import { getBuildEnv } from "../scripts/build-env";
 
 export default defineConfig({
   entry: ["src/index.ts"],
@@ -7,8 +8,9 @@ export default defineConfig({
   bundle: true,
   minify: false,
   clean: true,
-  sourcemap: false,
+  sourcemap: true,
   noExternal: [/.*/], // Bundle ALL dependencies inline - required for GitHub Actions runners
   platform: "node",
   target: "node20",
+  env: getBuildEnv(),
 });

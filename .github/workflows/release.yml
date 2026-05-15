@@ -1,110 +1,389 @@
-name: Release
+name: Release Action
 #
-# Triggered when a release is published in this monorepo.
-# Tag format: <action-name>@<version>  e.g. sync-openapi@v4.1.0
+# Builds a single action with telemetry constants + release identifier baked
+# into the bundle, uploads sourcemaps to Sentry, publishes the artifact to
+# the orphan branch `dist/<action>`, tags it `<action>@<version>`, moves
+# floating major/minor aliases, creates a GitHub Release, and appends a
+# ledger entry to `<action>/RELEASES.md` on main.
 #
-# All actions are referenced directly from fern-api/actions — no mirroring.
-# This workflow moves major/minor alias tags on this repo so consumers pinned
-# to e.g. fern-api/actions/sync-openapi@v4 get the update automatically.
-#
-# example-action is blocked from releasing (template only).
-#
-# TODO: pin internal sibling-action refs at release time.
-# Composite actions in this repo (e.g. generate/action.yml) currently use
-# `uses: fern-api/actions/<sibling>@main` for sibling actions. This is fine for
-# day-to-day development but means a customer pinned to generate@v1 still
-# resolves verify-token from main — drift risk.
-# Fix at release time, not by mutating tags (immutable tags are the future):
-#   1. Cut releases on a branch (e.g. release/<action>@v1.2.3).
-#   2. Sed-rewrite sibling refs in <action>/action.yml from @main to @v1.2.3.
-#   3. Commit the rewrite on that branch.
-#   4. Tag v1.2.3 from that commit (created once, never moved).
-#   5. Move floating aliases (v1, v1.2) to the same commit — what this workflow
-#      already does for non-internally-referencing actions.
-# Result: customers on @v1.2.3 get a fully self-consistent composition;
-# customers on @v1 get auto-bumps via the floating alias.
+# Triggered manually via workflow_dispatch.
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Which action to release"
+        type: choice
+        required: true
+        options:
+          - generate
+          - preview
+          - resolve-cli
+          - setup-cli
+          - sync-openapi
+          - upgrade
+          - verify
+          - verify-token
+      version:
+        description: "Version (e.g. v1.2.3 or v1.2.3-beta.1)"
+        type: string
+        required: true
+      prerelease:
+        description: "Mark as prerelease (skips floating major/minor alias tags)"
+        type: boolean
+        default: false
+
+# Per-action serialization: two releases of the SAME action never run
+# concurrently (would corrupt the dist branch). Different actions can
+# release in parallel.
+concurrency:
+  group: release-${{ inputs.action }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
 
 jobs:
   # ---------------------------------------------------------------------------
-  # Parse the release tag.
+  # Validate inputs before doing any destructive work.
   # ---------------------------------------------------------------------------
-  parse:
-    name: Parse release tag
+  validate:
+    name: Validate inputs
     runs-on: ubuntu-latest
-    outputs:
-      action-name: ${{ steps.tag.outputs.action-name }}
-      version:     ${{ steps.tag.outputs.version }}
-      skip:        ${{ steps.tag.outputs.skip }}
     steps:
-      - name: Parse tag
-        id: tag
+      - name: Validate version format
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          VERSION: ${{ inputs.version }}
         run: |
-          # Expected format: <action-name>@<version>  e.g. sync-openapi@v4.1.0
-          if [[ "$TAG" != *"@"* ]]; then
-            echo "ERROR: Tag '$TAG' does not match expected format <action-name>@<version>"
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
+            echo "ERROR: Invalid version format '$VERSION'. Expected vX.Y.Z or vX.Y.Z-prerelease."
             exit 1
           fi
 
-          ACTION_NAME="${TAG%%@*}"
-          VERSION="${TAG##*@}"
+      - name: Reject example-action
+        if: inputs.action == 'example-action'
+        run: |
+          echo "ERROR: example-action is a template and cannot be released."
+          exit 1
 
-          echo "action-name=$ACTION_NAME" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION"         >> "$GITHUB_OUTPUT"
+      - name: Check tag does not already exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.action }}@${{ inputs.version }}
+        run: |
+          if gh api "repos/${{ github.repository }}/git/refs/tags/${TAG}" --silent 2>/dev/null; then
+            echo "ERROR: Tag '${TAG}' already exists. Tags are immutable — pick a different version."
+            exit 1
+          fi
+          echo "OK: Tag '${TAG}' is available."
 
-          if [[ "$ACTION_NAME" == "example-action" ]]; then
-            echo "Skipping release for example-action (template only)"
+  # ---------------------------------------------------------------------------
+  # Build the action with build-time env injection. Verifies the substitution
+  # actually happened.
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build ${{ inputs.action }}
+    needs: validate
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.action }}@${{ inputs.version }}
+      POSTHOG_API_KEY: ${{ vars.POSTHOG_API_KEY }}
+      SENTRY_DSN_AUTOMATIONS: ${{ vars.SENTRY_DSN_AUTOMATIONS }}
+      AUTOMATION_EVENT_API_URL: ${{ vars.AUTOMATION_EVENT_API_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: pnpm --filter "@fern-github-actions/shared" build
+
+      - name: Build action
+        run: pnpm --filter "@fern-github-actions/${{ inputs.action }}" build
+
+      - name: Verify env injection
+        env:
+          ACTION: ${{ inputs.action }}
+        run: |
+          BUNDLE="${ACTION}/dist/index.js"
+          if [ ! -f "$BUNDLE" ]; then
+            echo "ERROR: Build did not produce $BUNDLE"
+            exit 1
+          fi
+          if ! grep -F "${RELEASE_TAG}" "$BUNDLE" > /dev/null; then
+            echo "ERROR: RELEASE_TAG '${RELEASE_TAG}' not found in $BUNDLE — env injection failed."
+            exit 1
+          fi
+          echo "OK: RELEASE_TAG baked into $BUNDLE"
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ inputs.action }}
+          path: |
+            ${{ inputs.action }}/dist
+            ${{ inputs.action }}/action.yml
+          if-no-files-found: error
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Create Sentry release + upload sourcemaps. Runs BEFORE publish-dist so a
+  # failure aborts cleanly without a half-released tag. Skipped when Sentry
+  # credentials aren't provisioned (early days).
+  # ---------------------------------------------------------------------------
+  sentry-release:
+    name: Sentry release + sourcemaps
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download bundle artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ inputs.action }}
+          path: ${{ inputs.action }}
+
+      - name: Detect Sentry provisioning
+        id: gate
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.FERN_SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: buildwithfern
+          SENTRY_PROJECT: automations-actions
+        run: |
+          if [[ -z "$SENTRY_AUTH_TOKEN" || -z "$SENTRY_ORG" || -z "$SENTRY_PROJECT" ]]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            exit 0
+            echo "Sentry credentials not configured — skipping release + sourcemap upload."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
-          echo "skip=false" >> "$GITHUB_OUTPUT"
+      - name: Create Sentry release + upload sourcemaps
+        if: steps.gate.outputs.skip != 'true'
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.FERN_SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: buildwithfern
+          SENTRY_PROJECT: automations-actions
+        with:
+          version: ${{ inputs.action }}@${{ inputs.version }}
+          sourcemaps: ${{ inputs.action }}/dist
+          url_prefix: "~/"
 
   # ---------------------------------------------------------------------------
-  # Move major/minor alias tags on this repo.
+  # Publish to the orphan branch dist/<action> and tag the commit.
   # ---------------------------------------------------------------------------
-  tag-alias:
-    name: Move alias tags for ${{ needs.parse.outputs.action-name }} ${{ needs.parse.outputs.version }}
+  publish-dist:
+    name: Publish to dist/${{ inputs.action }}
+    needs: [build, sentry-release]
     runs-on: ubuntu-latest
-    needs: parse
-    if: needs.parse.outputs.skip != 'true'
-    permissions:
-      contents: write
-    env:
-      ACTION_NAME: ${{ needs.parse.outputs.action-name }}
-      VERSION:     ${{ needs.parse.outputs.version }}
+    outputs:
+      dist_sha: ${{ steps.publish.outputs.sha }}
     steps:
-      - name: Checkout monorepo at release tag
+      - name: Checkout (for git config + fetching dist branch)
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 1
 
-      - name: Move alias tags
+      - name: Download bundle artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ inputs.action }}
+          path: /tmp/release-staging
+
+      - name: Configure git
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name  "github-actions[bot]"
+          git config user.name "github-actions[bot]"
+
+      - name: Push to dist/${{ inputs.action }} + tag
+        id: publish
+        env:
+          ACTION: ${{ inputs.action }}
+          VERSION: ${{ inputs.version }}
+          SRC_SHA: ${{ github.sha }}
+          REPO_SLUG: ${{ github.repository }}
+        run: |
+          DIST_BRANCH="dist/${ACTION}"
+          TAG="${ACTION}@${VERSION}"
+          SRC_SHORT=$(echo "${SRC_SHA}" | cut -c1-7)
+
+          if git ls-remote --heads origin "${DIST_BRANCH}" | grep -q "${DIST_BRANCH}$"; then
+            # Branch exists — fetch and check out
+            git fetch origin "${DIST_BRANCH}:${DIST_BRANCH}"
+            git checkout "${DIST_BRANCH}"
+            # Replace this action's tree with the freshly built artifact
+            rm -rf "${ACTION}"
+            mkdir -p "${ACTION}"
+            cp -r /tmp/release-staging/dist "${ACTION}/dist"
+            cp /tmp/release-staging/action.yml "${ACTION}/action.yml"
+          else
+            # First release — create orphan branch
+            git checkout --orphan "${DIST_BRANCH}"
+            git rm -rf . > /dev/null 2>&1 || true
+            mkdir -p "${ACTION}"
+            cp -r /tmp/release-staging/dist "${ACTION}/dist"
+            cp /tmp/release-staging/action.yml "${ACTION}/action.yml"
+            cat > .gitignore <<'EOF'
+          node_modules/
+          EOF
+            cat > README.md <<EOF
+          # ${ACTION} dist branch
+
+          Holds published \`${ACTION}\` artifacts. Each commit corresponds to a release;
+          tags \`${ACTION}@vX.Y.Z\` point at specific releases.
+
+          Source code lives on \`main\`. **Do not edit this branch by hand** — the
+          [release workflow](https://github.com/${REPO_SLUG}/actions/workflows/release.yml)
+          manages it.
+          EOF
+          fi
+
+          git add -A
+          git commit -m "release: ${TAG}" \
+            -m "Source: ${SRC_SHORT} (main)" \
+            -m "Built from: https://github.com/${REPO_SLUG}/commit/${SRC_SHA}"
+          DIST_SHA=$(git rev-parse HEAD)
+          echo "sha=${DIST_SHA}" >> "$GITHUB_OUTPUT"
+
+          git push origin "${DIST_BRANCH}"
+          git tag "${TAG}"
+          git push origin "refs/tags/${TAG}"
+
+  # ---------------------------------------------------------------------------
+  # Move floating major/minor alias tags to the new release. Skipped on
+  # prereleases. Logic ported from the previous release.yml.
+  # ---------------------------------------------------------------------------
+  alias-tags:
+    name: Move alias tags
+    needs: publish-dist
+    if: inputs.prerelease != true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout at release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.action }}@${{ inputs.version }}
+          fetch-depth: 1
+
+      - name: Move alias tags
+        env:
+          ACTION: ${{ inputs.action }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
 
           STRIPPED="${VERSION#v}"
-          # Strip pre-release suffix (e.g. 4.1.0-beta.1 -> 4.1.0) for part counting
+          # Strip pre-release suffix (e.g. 4.1.0-beta.1 -> 4.1.0) for part counting.
           CORE="${STRIPPED%%-*}"
           MAJOR="v$(echo "$CORE" | cut -d. -f1)"
           PARTS=$(echo "$CORE" | tr '.' '\n' | wc -l)
 
-          # Alias tags are only moved for stable releases, not pre-releases
-          if [ "${{ github.event.release.prerelease }}" != "true" ]; then
-            # Major alias e.g. sync-openapi@v4
-            git tag -f "${ACTION_NAME}@${MAJOR}"
-            git push origin "refs/tags/${ACTION_NAME}@${MAJOR}" --force
+          # Major alias e.g. setup-cli@v4
+          git tag -f "${ACTION}@${MAJOR}"
+          git push origin "refs/tags/${ACTION}@${MAJOR}" --force
 
-            # Minor alias e.g. sync-openapi@v4.1 — only for semver with 3+ parts
-            if [ "$PARTS" -ge 3 ]; then
-              MINOR="v$(echo "$CORE" | cut -d. -f1).$(echo "$CORE" | cut -d. -f2)"
-              git tag -f "${ACTION_NAME}@${MINOR}"
-              git push origin "refs/tags/${ACTION_NAME}@${MINOR}" --force
-            fi
+          # Minor alias e.g. setup-cli@v4.1 — only for semver with 3+ parts
+          if [ "$PARTS" -ge 3 ]; then
+            MINOR="v$(echo "$CORE" | cut -d. -f1).$(echo "$CORE" | cut -d. -f2)"
+            git tag -f "${ACTION}@${MINOR}"
+            git push origin "refs/tags/${ACTION}@${MINOR}" --force
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Create the GitHub Release pointing at the new tag. Runs after the tag is
+  # published so the release attaches cleanly.
+  # ---------------------------------------------------------------------------
+  github-release:
+    name: GitHub Release
+    needs: [publish-dist, alias-tags]
+    if: always() && needs.publish-dist.result == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.create.outputs.url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        id: create
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.action }}@${{ inputs.version }}
+        run: |
+          PRE_FLAG=""
+          if [[ "${{ inputs.prerelease }}" == "true" ]]; then
+            PRE_FLAG="--prerelease"
+          fi
+          # shellcheck disable=SC2086
+          gh release create "${TAG}" \
+            ${PRE_FLAG} \
+            --title "${{ inputs.action }} ${{ inputs.version }}" \
+            --generate-notes
+          URL=$(gh release view "${TAG}" --json url --jq .url)
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------------------
+  # Append a release entry to <action>/RELEASES.md on main, then commit and
+  # push. Best-effort: a failed marker push does NOT roll back the release.
+  # ---------------------------------------------------------------------------
+  main-release-marker:
+    name: Append ledger entry on main
+    needs: [publish-dist, github-release]
+    if: always() && needs.publish-dist.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Configure git
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+      - name: Append ledger entry
+        env:
+          ACTION: ${{ inputs.action }}
+          VERSION: ${{ inputs.version }}
+          SRC_SHA: ${{ github.sha }}
+          DIST_SHA: ${{ needs.publish-dist.outputs.dist_sha }}
+          GH_RELEASE_URL: ${{ needs.github-release.outputs.url }}
+          REPO_SLUG: ${{ github.repository }}
+        run: node scripts/append-release-entry.mjs
+
+      - name: Commit and push (best-effort)
+        env:
+          ACTION: ${{ inputs.action }}
+          VERSION: ${{ inputs.version }}
+          SRC_SHA: ${{ github.sha }}
+          DIST_SHA: ${{ needs.publish-dist.outputs.dist_sha }}
+        run: |
+          git add "${ACTION}/RELEASES.md"
+          if git diff --cached --quiet; then
+            echo "No ledger change (idempotent retry)."
+            exit 0
+          fi
+          SRC_SHORT=$(echo "${SRC_SHA}" | cut -c1-7)
+          DIST_SHORT=$(echo "${DIST_SHA}" | cut -c1-7)
+          git commit -m "chore(release): ${ACTION}@${VERSION}" \
+            -m "Tag: ${ACTION}@${VERSION}" \
+            -m "Source: ${SRC_SHORT}" \
+            -m "Dist: dist/${ACTION}@${DIST_SHORT}"
+          git pull --rebase origin main || true
+          if ! git push origin main; then
+            echo "::warning ::Marker push to main failed — likely branch protection. Land the ledger entry manually."
+            exit 0
           fi

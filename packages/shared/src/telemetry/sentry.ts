@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import * as Sentry from "@sentry/node";
-import { SENTRY_DSN_AUTOMATIONS, isGithubActionsRunner } from "./build-constants.js";
+import { RELEASE_TAG, SENTRY_DSN_AUTOMATIONS, isGithubActionsRunner } from "./build-constants.js";
 import { EventName, type TelemetryContext, type TelemetryEvent } from "./types.js";
 
 let initialized = false;
@@ -14,6 +14,7 @@ function ensureInit(): boolean {
   }
   Sentry.init({
     dsn: SENTRY_DSN_AUTOMATIONS,
+    release: RELEASE_TAG,
     environment: process.env.GITHUB_REF_NAME ?? "unknown",
     defaultIntegrations: false,
   });
