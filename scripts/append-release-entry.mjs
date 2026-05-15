@@ -2,7 +2,7 @@
 /**
  * Prepends a release entry to <action>/RELEASES.md so main carries a
  * human-readable, queryable ledger of every release published through
- * .github/workflows/release-action.yml.
+ * .github/workflows/release.yml.
  *
  * Inputs (env vars):
  *   ACTION          required  e.g. "setup-cli"
@@ -21,7 +21,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const HEADER = [
-  "<!-- AUTO-GENERATED — DO NOT EDIT BY HAND. Managed by .github/workflows/release-action.yml. -->",
+  "<!-- AUTO-GENERATED — DO NOT EDIT BY HAND. Managed by .github/workflows/release.yml. -->",
   "<!-- Edits will be overwritten by the next release. -->",
 ].join("\n");
 

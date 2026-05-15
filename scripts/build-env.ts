@@ -9,7 +9,7 @@
  * telemetry no-ops because the SDK initializers short-circuit on empty
  * keys.
  *
- * Release CI (.github/workflows/release-action.yml): env vars populated
+ * Release CI (.github/workflows/release.yml): env vars populated
  * from repo vars/secrets, values get baked into the dist bundle.
  *
  * Imported by every action's `tsup.config.ts` and by

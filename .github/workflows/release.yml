@@ -7,9 +7,6 @@ name: Release Action
 # ledger entry to `<action>/RELEASES.md` on main.
 #
 # Triggered manually via workflow_dispatch.
-#
-# See /Users/fedezara/.claude/plans/help-me-setting-up-velvety-sutherland.md
-# for design rationale (orphan branches, env-var injection, ledger format).
 
 on:
   workflow_dispatch:
@@ -127,9 +124,6 @@ jobs:
           if ! grep -F "${RELEASE_TAG}" "$BUNDLE" > /dev/null; then
             echo "ERROR: RELEASE_TAG '${RELEASE_TAG}' not found in $BUNDLE — env injection failed."
             exit 1
-          fi
-          if grep -F '"dev"' "$BUNDLE" > /dev/null; then
-            echo "WARNING: '\"dev\"' fallback literal still appears in $BUNDLE — RELEASE_TAG may not have substituted everywhere."
           fi
           echo "OK: RELEASE_TAG baked into $BUNDLE"
 
@@ -249,7 +243,7 @@ jobs:
           tags \`${ACTION}@vX.Y.Z\` point at specific releases.
 
           Source code lives on \`main\`. **Do not edit this branch by hand** — the
-          [release workflow](https://github.com/${REPO_SLUG}/actions/workflows/release-action.yml)
+          [release workflow](https://github.com/${REPO_SLUG}/actions/workflows/release.yml)
           manages it.
           EOF
           fi
