@@ -360,11 +360,20 @@ jobs:
     if: always() && needs.publish-dist.result == 'success'
     runs-on: ubuntu-latest
     steps:
+      # `actions/checkout` wires the supplied token into git's credential
+      # helper so subsequent `git push` calls authenticate as the token's
+      # owner. ACTIONS_PAT must be a PAT (fine-grained, `Contents: write`
+      # on this repo) belonging to a user/app that's in main's branch
+      # protection bypass allowlist — mirrors fern's release-software.yml.
+      # If ACTIONS_PAT isn't configured, falls back to the default
+      # GITHUB_TOKEN and the push will be rejected by branch protection;
+      # the marker step logs a warning and the release continues.
       - name: Checkout main
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 1
+          token: ${{ secrets.ACTIONS_PAT || secrets.GITHUB_TOKEN }}
 
       - name: Configure git
         run: |
