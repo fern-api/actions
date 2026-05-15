@@ -119,18 +119,18 @@ Old tags (if any) point at historical commits on `main` from before this workflo
 
 ### Required configuration
 
-Set the following at **Settings → Secrets and variables → Actions**:
+All telemetry-related values live as **secrets** at **Settings → Secrets and variables → Actions → Secrets**:
 
-| Type | Name | Description |
-|---|---|---|
-| Secret | `FERN_SENTRY_AUTH_TOKEN` | Sentry user/org token with `project:releases` scope. Same secret as the fern repo so a single token covers all release pipelines. Without it, the `sentry-release` job auto-skips |
-| Variable | `SENTRY_ORG` | Sentry org slug (e.g. `buildwithfern`) |
-| Variable | `SENTRY_PROJECT` | Sentry project slug (e.g. `automations-actions`) |
-| Variable | `POSTHOG_API_KEY` | PostHog project key. Empty = PostHog stays no-op |
-| Variable | `SENTRY_DSN_AUTOMATIONS` | Sentry DSN for runtime event capture. Empty = capture stays no-op |
-| Variable | `AUTOMATION_EVENT_API_URL` | Fern Lightweight API base URL. Empty = stays no-op |
+| Name | Description |
+|---|---|
+| `FERN_SENTRY_AUTH_TOKEN` | Sentry user/org token with `project:releases` scope. Same secret as the fern repo so a single token covers all release pipelines. Without it, the `sentry-release` job auto-skips. |
+| `POSTHOG_API_KEY` | PostHog project key. Empty = PostHog stays no-op. |
+| `SENTRY_DSN_AUTOMATIONS` | Sentry DSN baked into the bundle for runtime event capture. Empty = capture stays no-op. |
+| `AUTOMATION_EVENT_API_URL` | Fern Lightweight API base URL. Empty = stays no-op. |
 
-PostHog API keys and Sentry DSNs are not secrets — they're write-only at the project level and designed to be embedded in client code. Storing them as **vars** makes that explicit and avoids the masked-output noise of secrets in logs.
+Note: PostHog project keys and Sentry DSNs are technically write-only at the project level and *could* be repo vars, but we keep them as secrets for light-touch obfuscation in CI logs.
+
+`SENTRY_ORG` (`buildwithfern`) and `SENTRY_PROJECT` (`automations-actions`) are hardcoded in [release.yml](.github/workflows/release.yml) — no configuration needed.
 
 The default `GITHUB_TOKEN` (`contents: write` from the workflow's own permissions block) handles tag pushes, dist branch pushes, GitHub Release creation, and the marker commit on main.
 

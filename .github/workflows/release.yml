@@ -87,9 +87,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RELEASE_TAG: ${{ inputs.action }}@${{ inputs.version }}
-      POSTHOG_API_KEY: ${{ vars.POSTHOG_API_KEY }}
-      SENTRY_DSN_AUTOMATIONS: ${{ vars.SENTRY_DSN_AUTOMATIONS }}
-      AUTOMATION_EVENT_API_URL: ${{ vars.AUTOMATION_EVENT_API_URL }}
+      POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+      SENTRY_DSN_AUTOMATIONS: ${{ secrets.SENTRY_DSN_AUTOMATIONS }}
+      AUTOMATION_EVENT_API_URL: ${{ secrets.AUTOMATION_EVENT_API_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -147,6 +147,14 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      # getsentry/action-release runs `sentry-cli releases set-commits --auto`,
+      # which requires a git repo on disk. Without this checkout the step
+      # fails with "could not find repository at '.'".
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download bundle artifact
         uses: actions/download-artifact@v4
         with:
