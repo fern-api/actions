@@ -1,0 +1,13 @@
+name: Verify Fern Token
+description: "Fails fast if FERN_TOKEN is not set. Use at the top of actions that require authentication."
+author: "Fern"
+
+inputs:
+  fern-token:
+    description: "FERN_TOKEN to verify"
+    required: true
+
+runs:
+  using: "node20"
+  main: "dist/index.js"
+  post: "dist/index.js"
