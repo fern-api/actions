@@ -2,9 +2,13 @@ name: Release Action
 #
 # Builds a single action with telemetry constants + release identifier baked
 # into the bundle, uploads sourcemaps to Sentry, publishes the artifact to
-# the orphan branch `dist/<action>`, tags it `<action>@<version>`, moves
-# floating major/minor aliases, creates a GitHub Release, and appends a
-# ledger entry to `<action>/RELEASES.md` on main.
+# the *root* of the orphan branch `dist/<action>`, tags it `<action>/<version>`,
+# moves floating major/minor aliases, creates a GitHub Release, and appends
+# a ledger entry to `<action>/RELEASES.md` on main.
+#
+# Consumers reference releases via `uses: fern-api/actions@<action>/<version>`
+# (no path component). See CONTRIBUTING.md for why the tag format is slash-
+# separated and the dist tree lives at the branch root.
 #
 # Triggered manually via workflow_dispatch.
 
@@ -69,7 +73,7 @@ jobs:
       - name: Check tag does not already exist
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ inputs.action }}@${{ inputs.version }}
+          TAG: ${{ inputs.action }}/${{ inputs.version }}
         run: |
           if gh api "repos/${{ github.repository }}/git/refs/tags/${TAG}" --silent 2>/dev/null; then
             echo "ERROR: Tag '${TAG}' already exists. Tags are immutable — pick a different version."
@@ -86,7 +90,7 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     env:
-      RELEASE_TAG: ${{ inputs.action }}@${{ inputs.version }}
+      RELEASE_TAG: ${{ inputs.action }}/${{ inputs.version }}
       POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
       SENTRY_DSN_AUTOMATIONS: ${{ secrets.SENTRY_DSN_AUTOMATIONS }}
       AUTOMATION_EVENT_API_URL: ${{ secrets.AUTOMATION_EVENT_API_URL }}
@@ -183,7 +187,7 @@ jobs:
           SENTRY_ORG: buildwithfern
           SENTRY_PROJECT: automations-actions
         with:
-          version: ${{ inputs.action }}@${{ inputs.version }}
+          version: ${{ inputs.action }}/${{ inputs.version }}
           sourcemaps: ${{ inputs.action }}/dist
           url_prefix: "~/"
 
@@ -222,39 +226,44 @@ jobs:
           REPO_SLUG: ${{ github.repository }}
         run: |
           DIST_BRANCH="dist/${ACTION}"
-          TAG="${ACTION}@${VERSION}"
+          TAG="${ACTION}/${VERSION}"
           SRC_SHORT=$(echo "${SRC_SHA}" | cut -c1-7)
 
           if git ls-remote --heads origin "${DIST_BRANCH}" | grep -q "${DIST_BRANCH}$"; then
-            # Branch exists — fetch and check out
             git fetch origin "${DIST_BRANCH}:${DIST_BRANCH}"
             git checkout "${DIST_BRANCH}"
-            # Replace this action's tree with the freshly built artifact
-            rm -rf "${ACTION}"
-            mkdir -p "${ACTION}"
-            cp -r /tmp/release-staging/dist "${ACTION}/dist"
-            cp /tmp/release-staging/action.yml "${ACTION}/action.yml"
           else
-            # First release — create orphan branch
             git checkout --orphan "${DIST_BRANCH}"
-            git rm -rf . > /dev/null 2>&1 || true
-            mkdir -p "${ACTION}"
-            cp -r /tmp/release-staging/dist "${ACTION}/dist"
-            cp /tmp/release-staging/action.yml "${ACTION}/action.yml"
-            cat > .gitignore <<'EOF'
+          fi
+
+          # Each release commit contains only the artifact for that release, at
+          # the branch root. Wipe everything (including any legacy `${ACTION}/`
+          # subdir from the pre-flat layout) so consumers writing
+          # `uses: fern-api/actions@${ACTION}/<version>` find action.yml + dist/
+          # right at the branch root. History is preserved via the orphan
+          # branch's commit chain.
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+
+          cp -r /tmp/release-staging/dist ./dist
+          cp /tmp/release-staging/action.yml ./action.yml
+          cat > .gitignore <<'EOF'
           node_modules/
           EOF
-            cat > README.md <<EOF
+          cat > README.md <<EOF
           # ${ACTION} dist branch
 
-          Holds published \`${ACTION}\` artifacts. Each commit corresponds to a release;
-          tags \`${ACTION}@vX.Y.Z\` point at specific releases.
+          Holds published \`${ACTION}\` artifacts at the branch root. Each commit
+          corresponds to a release; tags \`${ACTION}/vX.Y.Z\` point at specific
+          commits here. Consume via:
+
+          \`\`\`yaml
+          uses: fern-api/actions@${ACTION}/vX.Y.Z
+          \`\`\`
 
           Source code lives on \`main\`. **Do not edit this branch by hand** — the
           [release workflow](https://github.com/${REPO_SLUG}/actions/workflows/release.yml)
           manages it.
           EOF
-          fi
 
           git add -A
           git commit -m "release: ${TAG}" \
@@ -280,7 +289,7 @@ jobs:
       - name: Checkout at release tag
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.action }}@${{ inputs.version }}
+          ref: ${{ inputs.action }}/${{ inputs.version }}
           fetch-depth: 1
 
       - name: Move alias tags
@@ -297,15 +306,15 @@ jobs:
           MAJOR="v$(echo "$CORE" | cut -d. -f1)"
           PARTS=$(echo "$CORE" | tr '.' '\n' | wc -l)
 
-          # Major alias e.g. setup-cli@v4
-          git tag -f "${ACTION}@${MAJOR}"
-          git push origin "refs/tags/${ACTION}@${MAJOR}" --force
+          # Major alias e.g. setup-cli/v4
+          git tag -f "${ACTION}/${MAJOR}"
+          git push origin "refs/tags/${ACTION}/${MAJOR}" --force
 
-          # Minor alias e.g. setup-cli@v4.1 — only for semver with 3+ parts
+          # Minor alias e.g. setup-cli/v4.1 — only for semver with 3+ parts
           if [ "$PARTS" -ge 3 ]; then
             MINOR="v$(echo "$CORE" | cut -d. -f1).$(echo "$CORE" | cut -d. -f2)"
-            git tag -f "${ACTION}@${MINOR}"
-            git push origin "refs/tags/${ACTION}@${MINOR}" --force
+            git tag -f "${ACTION}/${MINOR}"
+            git push origin "refs/tags/${ACTION}/${MINOR}" --force
           fi
 
   # ---------------------------------------------------------------------------
@@ -327,7 +336,7 @@ jobs:
         id: create
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ inputs.action }}@${{ inputs.version }}
+          TAG: ${{ inputs.action }}/${{ inputs.version }}
         run: |
           PRE_FLAG=""
           if [[ "${{ inputs.prerelease }}" == "true" ]]; then
@@ -386,10 +395,10 @@ jobs:
           fi
           SRC_SHORT=$(echo "${SRC_SHA}" | cut -c1-7)
           DIST_SHORT=$(echo "${DIST_SHA}" | cut -c1-7)
-          git commit -m "chore(release): ${ACTION}@${VERSION}" \
-            -m "Tag: ${ACTION}@${VERSION}" \
+          git commit -m "chore(release): ${ACTION}/${VERSION}" \
+            -m "Tag: ${ACTION}/${VERSION}" \
             -m "Source: ${SRC_SHORT}" \
-            -m "Dist: dist/${ACTION}@${DIST_SHORT}"
+            -m "Dist: dist/${ACTION} (${DIST_SHORT})"
           git pull --rebase origin main || true
           if ! git push origin main; then
             echo "::warning ::Marker push to main failed — likely branch protection. Land the ledger entry manually."

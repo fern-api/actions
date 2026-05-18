@@ -49,7 +49,7 @@ jobs:
         with:
           token: ${{ secrets.OPENAPI_SYNC_TOKEN }}
       - name: Update API with Fern
-        uses: fern-api/actions/sync-openapi@v4
+        uses: fern-api/actions@sync-openapi/v4
         with:
           update_from_source: true
           token: ${{ secrets.OPENAPI_SYNC_TOKEN }}
@@ -82,7 +82,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Sync OpenAPI spec to target repo
-        uses: fern-api/actions/sync-openapi@v4
+        uses: fern-api/actions@sync-openapi/v4
         with:
           repository: <your-org>/<your-target-repo>
           token: ${{ secrets.<PAT_TOKEN_NAME> }}
@@ -130,15 +130,7 @@ The GitHub token used for this action must have:
 
 ## Releasing
 
-Tag the commit and publish a GitHub Release from the [fern-api/actions](https://github.com/fern-api/actions) monorepo:
-
-```sh
-git tag sync-openapi@v4.0.1
-git push origin sync-openapi@v4.0.1
-gh release create sync-openapi@v4.0.1 --generate-notes
-```
-
-The release workflow moves the major and minor version tags (e.g. `v4` and `v4.0`) so users pinned to `@v4` or `@v4.0` get the update immediately.
+Dispatch [`.github/workflows/release.yml`](https://github.com/fern-api/actions/actions/workflows/release.yml) in the [fern-api/actions](https://github.com/fern-api/actions) monorepo (`action: sync-openapi`, `version: v4.0.1`). The workflow builds the bundle, publishes it to the root of `dist/sync-openapi`, creates the tag `sync-openapi/v4.0.1`, and moves the floating major/minor aliases (`sync-openapi/v4`, `sync-openapi/v4.0`) so consumers pinned to those get the update immediately. See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
 
 ---
 
