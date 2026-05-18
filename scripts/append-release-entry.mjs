@@ -47,10 +47,10 @@ function buildEntry({ action, version, srcSha, distSha, ghReleaseUrl, releaseDat
   const distShort = shorten(distSha);
   const lines = [
     `## ${version} — ${releaseDate}`,
-    `- Tag: \`${action}@${version}\``,
+    `- Tag: \`${action}/${version}\``,
     `- Source: [\`${srcShort}\`](https://github.com/${repoSlug}/commit/${srcSha}) on main`,
     `- Dist: [\`${distShort}\`](https://github.com/${repoSlug}/commit/${distSha}) on \`dist/${action}\``,
-    `- Sentry release: \`${action}@${version}\``,
+    `- Sentry release: \`${action}/${version}\``,
   ];
   if (ghReleaseUrl) {
     lines.push(`- GitHub Release: ${ghReleaseUrl}`);
@@ -112,14 +112,14 @@ function main() {
     const existing = readFileSync(filePath, "utf8");
     const updated = prepend(existing, action, version, entry);
     if (updated === null) {
-      console.log(`append-release-entry: ${action}@${version} is already the top entry — no-op`);
+      console.log(`append-release-entry: ${action}/${version} is already the top entry — no-op`);
       return;
     }
     next = updated;
   }
 
   writeFileSync(filePath, next);
-  console.log(`append-release-entry: wrote ${action}/RELEASES.md (entry for ${action}@${version})`);
+  console.log(`append-release-entry: wrote ${action}/RELEASES.md (entry for ${action}/${version})`);
 }
 
 main();

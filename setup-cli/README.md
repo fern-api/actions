@@ -27,7 +27,7 @@ Node.js and npm must be available before this action runs. Add [`actions/setup-n
 
 ## Usage
 
-Use the major version tag (e.g. `@v1`) to automatically receive the latest updates:
+Pin to the floating major version (e.g. `@setup-cli/v1`) to automatically receive the latest updates:
 
 ```yaml
 - uses: actions/setup-node@v4
@@ -35,14 +35,14 @@ Use the major version tag (e.g. `@v1`) to automatically receive the latest updat
     node-version: "lts/*"
 
 - name: Setup Fern CLI
-  uses: fern-api/actions/setup-cli@v1
+  uses: fern-api/actions@setup-cli/v1
 ```
 
 ### With a specific version
 
 ```yaml
 - name: Setup Fern CLI
-  uses: fern-api/actions/setup-cli@v1
+  uses: fern-api/actions@setup-cli/v1
   with:
     version: "3.81.0"
 ```
@@ -73,21 +73,13 @@ jobs:
           node-version: "lts/*"
 
       - name: Setup Fern CLI
-        uses: fern-api/actions/setup-cli@v1
+        uses: fern-api/actions@setup-cli/v1
 
       - run: fern generate
 ```
 
 ## Releasing
 
-Tag the commit and publish a GitHub Release from the [fern-api/actions](https://github.com/fern-api/actions) monorepo:
-
-```sh
-git tag setup-cli@v1.0.1
-git push origin setup-cli@v1.0.1
-gh release create setup-cli@v1.0.1 --generate-notes
-```
-
-The release workflow moves the major version tag (e.g. `v1`) so users pinned to `@v1` get the update immediately.
+Dispatch [`.github/workflows/release.yml`](https://github.com/fern-api/actions/actions/workflows/release.yml) in the [fern-api/actions](https://github.com/fern-api/actions) monorepo (`action: setup-cli`, `version: v1.0.1`). The workflow builds the bundle, publishes it to the root of `dist/setup-cli`, creates the tag `setup-cli/v1.0.1`, and moves the floating `setup-cli/v1` major alias so consumers pinned to `@setup-cli/v1` get the update immediately. See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
 
 ---

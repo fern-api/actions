@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: fern-api/actions/preview@v1
+      - uses: fern-api/actions@preview/v1
         with:
           fern-token: ${{ secrets.FERN_TOKEN }}
 ```

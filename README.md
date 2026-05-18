@@ -36,7 +36,7 @@ Install the Fern CLI in your workflow.
 - uses: actions/setup-node@v4
   with:
     node-version: "lts/*"
-- uses: fern-api/actions/setup-cli@v1
+- uses: fern-api/actions@setup-cli/v1
 ```
 
 ---
@@ -46,7 +46,7 @@ Install the Fern CLI in your workflow.
 Keep your Fern config up to date — pull OpenAPI specs from a public URL or sync files between repositories, and open a PR with the changes.
 
 ```yaml
-- uses: fern-api/actions/sync-openapi@v4
+- uses: fern-api/actions@sync-openapi/v4
   with:
     token: ${{ secrets.OPENAPI_SYNC_TOKEN }}
     update_from_source: true
@@ -59,7 +59,7 @@ Keep your Fern config up to date — pull OpenAPI specs from a public URL or syn
 Run `fern generate` on push to `main` and open SDK PRs in SDK repos. Includes breaking change detection and failure issue management.
 
 ```yaml
-- uses: fern-api/actions/generate@v1
+- uses: fern-api/actions@generate/v1
   with:
     fern-token: ${{ secrets.FERN_TOKEN }}
 ```
@@ -71,7 +71,7 @@ Run `fern generate` on push to `main` and open SDK PRs in SDK repos. Includes br
 Upgrade Fern CLI and generator versions on a schedule and open or update a single shared PR.
 
 ```yaml
-- uses: fern-api/actions/upgrade@v1
+- uses: fern-api/actions@upgrade/v1
   with:
     fern-token: ${{ secrets.FERN_TOKEN }}
 ```
@@ -83,7 +83,7 @@ Upgrade Fern CLI and generator versions on a schedule and open or update a singl
 Validate Fern changes on PRs before merge — runs generation, self-verification, and breaking change detection. Enables automerge on clean PRs, requests reviewers on failures.
 
 ```yaml
-- uses: fern-api/actions/verify@v1
+- uses: fern-api/actions@verify/v1
   with:
     fern-token: ${{ secrets.FERN_TOKEN }}
 ```
