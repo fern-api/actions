@@ -131,6 +131,24 @@ jobs:
           fi
           echo "OK: RELEASE_TAG baked into $BUNDLE"
 
+      - name: Install Sentry CLI
+        run: curl -sL https://sentry.io/get-cli/ | INSTALL_DIR=/usr/local/bin bash
+
+      # Must run before upload-artifact so dist/<action> ships the injected bundle.
+      - name: Inject Sentry debug IDs
+        env:
+          ACTION: ${{ inputs.action }}
+        run: |
+          sentry-cli sourcemaps inject "${ACTION}/dist"
+          if ! grep -F "//# debugId=" "${ACTION}/dist/index.js" > /dev/null; then
+            echo "ERROR: no debugId pragma in ${ACTION}/dist/index.js"
+            exit 1
+          fi
+          if ! grep -F "\"debugId\":" "${ACTION}/dist/index.js.map" > /dev/null; then
+            echo "ERROR: no debugId field in ${ACTION}/dist/index.js.map"
+            exit 1
+          fi
+
       - name: Upload bundle artifact
         uses: actions/upload-artifact@v4
         with:
@@ -190,6 +208,7 @@ jobs:
           version: ${{ inputs.action }}@${{ inputs.version }}
           sourcemaps: ${{ inputs.action }}/dist
           url_prefix: "~/"
+          inject: false
 
   # ---------------------------------------------------------------------------
   # Publish to the orphan branch dist/<action> and tag the commit.
@@ -360,11 +379,20 @@ jobs:
     if: always() && needs.publish-dist.result == 'success'
     runs-on: ubuntu-latest
     steps:
+      # `actions/checkout` wires the supplied token into git's credential
+      # helper so subsequent `git push` calls authenticate as the token's
+      # owner. ACTIONS_PAT must be a PAT (fine-grained, `Contents: write`
+      # on this repo) belonging to a user/app that's in main's branch
+      # protection bypass allowlist — mirrors fern's release-software.yml.
+      # If ACTIONS_PAT isn't configured, falls back to the default
+      # GITHUB_TOKEN and the push will be rejected by branch protection;
+      # the marker step logs a warning and the release continues.
       - name: Checkout main
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 1
+          token: ${{ secrets.ACTIONS_PAT || secrets.GITHUB_TOKEN }}
 
       - name: Configure git
         run: |

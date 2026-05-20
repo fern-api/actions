@@ -127,12 +127,13 @@ All telemetry-related values live as **secrets** at **Settings → Secrets and v
 | `POSTHOG_API_KEY` | PostHog project key. Empty = PostHog stays no-op. |
 | `SENTRY_DSN_AUTOMATIONS` | Sentry DSN baked into the bundle for runtime event capture. Empty = capture stays no-op. |
 | `AUTOMATION_EVENT_API_URL` | Fern Lightweight API base URL. Empty = stays no-op. |
+| `ACTIONS_PAT` | Personal Access Token (fine-grained, `Contents: read and write` on this repo) belonging to a user/app on main's branch-protection bypass allowlist. Mirrors fern's `release-software.yml` pattern. Required to land the `chore(release):` marker commit on main — without it, the marker push is rejected by branch protection and the workflow logs a warning (the release itself still succeeds). |
 
 Note: PostHog project keys and Sentry DSNs are technically write-only at the project level and *could* be repo vars, but we keep them as secrets for light-touch obfuscation in CI logs.
 
 `SENTRY_ORG` (`buildwithfern`) and `SENTRY_PROJECT` (`automations-actions`) are hardcoded in [release.yml](.github/workflows/release.yml) — no configuration needed.
 
-The default `GITHUB_TOKEN` (`contents: write` from the workflow's own permissions block) handles tag pushes, dist branch pushes, GitHub Release creation, and the marker commit on main.
+The default `GITHUB_TOKEN` (`contents: write` from the workflow's own permissions block) handles tag pushes, dist branch pushes, and GitHub Release creation. Only the marker commit on main needs `ACTIONS_PAT` because main has branch protection requiring PRs.
 
 ## Action reference
 
