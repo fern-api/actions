@@ -1,4 +1,6 @@
 "use strict";
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="f70063b3-714e-5adc-bdb0-e286d0da7152")}catch(e){}}();
+
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -90594,7 +90596,7 @@ var require_dist2 = __commonJS({
     var POSTHOG_HOST = "https://us.i.posthog.com";
     var SENTRY_DSN_AUTOMATIONS = "https://dea09856c96cfd7b89ad594d84df3e49@o4509504076185600.ingest.us.sentry.io/4511388447145984";
     var AUTOMATION_EVENT_API_URL = "";
-    var RELEASE_TAG = "verify-token@v0.0.1-test";
+    var RELEASE_TAG = "verify-token@v0.0.2-test";
     function isGithubActionsRunner() {
       return process.env.GITHUB_ACTIONS === "true";
     }
@@ -91063,3 +91065,4 @@ posthog-node/lib/node/index.cjs:
    *)
 */
 //# sourceMappingURL=index.js.map
+//# debugId=f70063b3-714e-5adc-bdb0-e286d0da7152
