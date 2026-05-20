@@ -103,7 +103,7 @@ Or from the UI: **Actions → Release Action → Run workflow**, pick the action
 
 1. **validate** — semver-checks the version, rejects `example-action`, hard-fails if the tag already exists
 2. **build** — installs deps, builds shared + the selected action with `RELEASE_TAG`, `POSTHOG_API_KEY`, `SENTRY_DSN_AUTOMATIONS`, `AUTOMATION_EVENT_API_URL` baked into the bundle via tsup's `env` map. Asserts the substitution actually happened
-3. **sentry-release** — creates a Sentry release named `<action>/<version>` and uploads sourcemaps. Auto-skips if `FERN_SENTRY_AUTH_TOKEN` is not provisioned
+3. **sentry-release** — creates a Sentry release named `<action>@<version>` (note: `@` not `/` — Sentry rejects slashes in release identifiers) and uploads sourcemaps. The Sentry release id matches the `RELEASE_TAG` baked into the bundle so source-map deobfuscation resolves. Auto-skips if `FERN_SENTRY_AUTH_TOKEN` is not provisioned
 4. **publish-dist** — checks out (or orphan-creates) `dist/<action>`, wipes the working tree, copies in the freshly built `dist/` and `action.yml` *at the branch root*, commits with `Source:` / `Built from:` lines referencing the source SHA, pushes, then tags `<action>/<version>` on that commit
 5. **alias-tags** — force-moves `<action>/v<major>` and `<action>/v<major>.<minor>` aliases (skipped on prerelease)
 6. **github-release** — `gh release create <action>/<version> --generate-notes`

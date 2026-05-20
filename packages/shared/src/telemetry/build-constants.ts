@@ -22,7 +22,10 @@ export const AUTOMATION_EVENT_API_URL = process.env.AUTOMATION_EVENT_API_URL ?? 
 
 /**
  * Release identifier baked into the bundle at build time. Format:
- * `<action>/<version>` (e.g. `setup-cli/v4.1.0`). Used as Sentry `release`
+ * `<action>@<version>` (e.g. `setup-cli@v4.1.0`) — uses `@` not `/` because
+ * Sentry's release-version validator rejects slashes. (The *git tag* uses
+ * `/`, e.g. `setup-cli/v4.1.0`, so the consumer ref parses cleanly — see
+ * CONTRIBUTING.md.) Used as Sentry `release`
  * tag, PostHog `$lib_version`, and the event payload's `actions_version`
  * field — all three should match so Sentry source-map upload, PostHog
  * version filters, and downstream analytics resolve to the same release.

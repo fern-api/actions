@@ -90,7 +90,7 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     env:
-      RELEASE_TAG: ${{ inputs.action }}/${{ inputs.version }}
+      RELEASE_TAG: ${{ inputs.action }}@${{ inputs.version }}
       POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
       SENTRY_DSN_AUTOMATIONS: ${{ secrets.SENTRY_DSN_AUTOMATIONS }}
       AUTOMATION_EVENT_API_URL: ${{ secrets.AUTOMATION_EVENT_API_URL }}
@@ -187,7 +187,7 @@ jobs:
           SENTRY_ORG: buildwithfern
           SENTRY_PROJECT: automations-actions
         with:
-          version: ${{ inputs.action }}/${{ inputs.version }}
+          version: ${{ inputs.action }}@${{ inputs.version }}
           sourcemaps: ${{ inputs.action }}/dist
           url_prefix: "~/"
 
