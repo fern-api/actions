@@ -131,6 +131,24 @@ jobs:
           fi
           echo "OK: RELEASE_TAG baked into $BUNDLE"
 
+      - name: Install Sentry CLI
+        run: curl -sL https://sentry.io/get-cli/ | INSTALL_DIR=/usr/local/bin bash
+
+      # Must run before upload-artifact so dist/<action> ships the injected bundle.
+      - name: Inject Sentry debug IDs
+        env:
+          ACTION: ${{ inputs.action }}
+        run: |
+          sentry-cli sourcemaps inject "${ACTION}/dist"
+          if ! grep -F "//# debugId=" "${ACTION}/dist/index.js" > /dev/null; then
+            echo "ERROR: no debugId pragma in ${ACTION}/dist/index.js"
+            exit 1
+          fi
+          if ! grep -F "\"debugId\":" "${ACTION}/dist/index.js.map" > /dev/null; then
+            echo "ERROR: no debugId field in ${ACTION}/dist/index.js.map"
+            exit 1
+          fi
+
       - name: Upload bundle artifact
         uses: actions/upload-artifact@v4
         with:
@@ -190,6 +208,7 @@ jobs:
           version: ${{ inputs.action }}@${{ inputs.version }}
           sourcemaps: ${{ inputs.action }}/dist
           url_prefix: "~/"
+          inject: false
 
   # ---------------------------------------------------------------------------
   # Publish to the orphan branch dist/<action> and tag the commit.
