@@ -50,7 +50,7 @@ function buildEntry({ action, version, srcSha, distSha, ghReleaseUrl, releaseDat
     `- Tag: \`${action}/${version}\``,
     `- Source: [\`${srcShort}\`](https://github.com/${repoSlug}/commit/${srcSha}) on main`,
     `- Dist: [\`${distShort}\`](https://github.com/${repoSlug}/commit/${distSha}) on \`dist/${action}\``,
-    `- Sentry release: \`${action}/${version}\``,
+    `- Sentry release: \`${action}@${version}\``,
   ];
   if (ghReleaseUrl) {
     lines.push(`- GitHub Release: ${ghReleaseUrl}`);
