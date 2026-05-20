@@ -131,6 +131,38 @@ jobs:
           fi
           echo "OK: RELEASE_TAG baked into $BUNDLE"
 
+      # Inject Sentry debug IDs into the bundle + sourcemap so the artifact
+      # that downstream jobs (sentry-release, publish-dist) consume already
+      # carries them. The dist branch consumers will run *this* JS at
+      # runtime, so the debug ID baked here is what Sentry's SDK reports
+      # in stack frames and what enables source-map deobfuscation against
+      # the artifact bundle uploaded in the next job.
+      #
+      # Why here and not in sentry-release: that job downloads its own
+      # copy of the artifact, injects in its own workspace, uploads —
+      # but publish-dist downloads the *un-injected* artifact and pushes
+      # that to dist/<action>, so runtime bundles would lack debug IDs
+      # and Sentry would only ever see minified frames.
+      - name: Install Sentry CLI
+        run: curl -sL https://sentry.io/get-cli/ | INSTALL_DIR=/usr/local/bin bash
+
+      - name: Inject Sentry debug IDs into bundle + sourcemap
+        env:
+          ACTION: ${{ inputs.action }}
+        run: |
+          sentry-cli sourcemaps inject "${ACTION}/dist"
+          # Sanity check: the JS should now carry a debugId pragma, and
+          # the .map should have a debugId field. Fail fast if not.
+          if ! grep -F "//# debugId=" "${ACTION}/dist/index.js" > /dev/null; then
+            echo "ERROR: sentry-cli inject did not add a debugId pragma to ${ACTION}/dist/index.js"
+            exit 1
+          fi
+          if ! grep -F "\"debugId\":" "${ACTION}/dist/index.js.map" > /dev/null; then
+            echo "ERROR: sentry-cli inject did not add a debugId to ${ACTION}/dist/index.js.map"
+            exit 1
+          fi
+          echo "OK: debug IDs injected into ${ACTION}/dist/{index.js,index.js.map}"
+
       - name: Upload bundle artifact
         uses: actions/upload-artifact@v4
         with:
@@ -187,9 +219,18 @@ jobs:
           SENTRY_ORG: buildwithfern
           SENTRY_PROJECT: automations-actions
         with:
+          # Must match the RELEASE_TAG baked into the bundle so source-map
+          # deobfuscation resolves. Uses `@` (not the git-tag `/` format)
+          # because Sentry rejects slashes in release identifiers.
           version: ${{ inputs.action }}@${{ inputs.version }}
           sourcemaps: ${{ inputs.action }}/dist
           url_prefix: "~/"
+          # Debug IDs were injected upstream in the `build` job before
+          # upload-artifact, so both the artifact this job uploads *and*
+          # the one publish-dist pushes to the dist branch carry the same
+          # debug IDs. Re-injecting here would generate new IDs and break
+          # matching against what the consumer actually runs.
+          inject: false
 
   # ---------------------------------------------------------------------------
   # Publish to the orphan branch dist/<action> and tag the commit.
